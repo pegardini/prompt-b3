@@ -1,104 +1,48 @@
-# Force rebuild v2
-from flask import Flask, render_template_string, request, jsonify, send_file
+from flask import Flask, render_template_string, request, jsonify
 from datetime import datetime, timedelta
-import json
 import os
-import secrets
-from pathlib import Path
-import io
 
 app = Flask(__name__)
 
-# Arquivo de banco de dados
-DB_FILE = 'chaves.json'
-
-# ==================== FUNÇÕES DE BANCO DE DADOS ====================
-
-def carregar_chaves():
-    """Carrega as chaves do arquivo JSON"""
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {'chaves': []}
-
-def salvar_chaves(dados):
-    """Salva as chaves no arquivo JSON"""
-    with open(DB_FILE, 'w', encoding='utf-8') as f:
-        json.dump(dados, f, ensure_ascii=False, indent=2)
-
-def gerar_chave(tipo='trial'):
-    """Gera uma chave única"""
-    parte1 = secrets.token_hex(3).upper()
-    parte2 = secrets.token_hex(3).upper()
-    
-    if tipo == 'trial':
-        return f"PROMPT-TRIAL-{parte1}-{parte2}-7DIAS"
-    else:
-        return f"PROMPT-PRO-{parte1}-{parte2}-1ANO"
+# Dados de chaves em memória (pode ser expandido para banco de dados)
+CHAVES_VALIDAS = {
+    'PROMPT-TRIAL-65C033-7339A6-7DIAS': {
+        'email': 'teste@example.com',
+        'nome': 'Usuário Teste',
+        'tipo': 'trial',
+        'data_expiracao': (datetime.now() + timedelta(days=7)).isoformat()
+    }
+}
 
 def validar_chave(chave):
     """Valida se a chave é válida"""
-    dados = carregar_chaves()
-    
-    for item in dados.get('chaves', []):
-        if item['chave'] == chave:
-            # Verifica se expirou
-            data_expiracao = datetime.fromisoformat(item['data_expiracao'])
-            if datetime.now() > data_expiracao:
-                return {
-                    'valida': False,
-                    'mensagem': 'Chave expirada',
-                    'tipo': 'expirada'
-                }
-            
-            # Calcula dias restantes
-            dias_restantes = (data_expiracao - datetime.now()).days
-            
+    if chave in CHAVES_VALIDAS:
+        item = CHAVES_VALIDAS[chave]
+        data_expiracao = datetime.fromisoformat(item['data_expiracao'])
+        
+        if datetime.now() > data_expiracao:
             return {
-                'valida': True,
-                'email': item['email'],
-                'nome': item.get('nome', 'Usuário'),
-                'tipo': item['tipo'],
-                'data_expiracao': item['data_expiracao'],
-                'dias_restantes': dias_restantes,
-                'mensagem': f'Chave válida! {dias_restantes} dias restantes.'
+                'valida': False,
+                'mensagem': 'Chave expirada',
+                'tipo': 'expirada'
             }
+        
+        dias_restantes = (data_expiracao - datetime.now()).days
+        return {
+            'valida': True,
+            'email': item['email'],
+            'nome': item['nome'],
+            'tipo': item['tipo'],
+            'data_expiracao': item['data_expiracao'],
+            'dias_restantes': dias_restantes,
+            'mensagem': f'Chave válida! {dias_restantes} dias restantes.'
+        }
     
     return {
         'valida': False,
         'mensagem': 'Chave não encontrada',
         'tipo': 'nao_encontrada'
     }
-
-def criar_chave_novo(email, nome, tipo='trial'):
-    """Cria uma nova chave"""
-    dados = carregar_chaves()
-    chave = gerar_chave(tipo)
-    
-    if tipo == 'trial':
-        data_expiracao = (datetime.now() + timedelta(days=7)).isoformat()
-        dispositivos = 1
-    else:
-        data_expiracao = (datetime.now() + timedelta(days=365)).isoformat()
-        dispositivos = 2
-    
-    novo_item = {
-        'chave': chave,
-        'email': email,
-        'nome': nome,
-        'tipo': tipo,
-        'data_criacao': datetime.now().isoformat(),
-        'data_expiracao': data_expiracao,
-        'dispositivos_permitidos': dispositivos,
-        'dispositivos_usados': 0
-    }
-    
-    dados['chaves'].append(novo_item)
-    salvar_chaves(dados)
-    
-    return novo_item
-
-# ==================== CONTEÚDO DO PROMPT ====================
 
 PROMPT_COMPLETO = """# 🎯 PROMPT FUNDAMENTALISTA B3 - VERSÃO COM VALIDAÇÃO
 
@@ -154,71 +98,6 @@ Você está prestes a usar um dos prompts mais completos para análise fundament
 ✅ Validar dados com múltiplas fontes
 ✅ Gerar classificações profissionais
 
-### Como Funciona
-
-1. **Você fornece** um relatório trimestral (ITR) ou anual (DFP)
-2. **Eu extraio** os dados principais
-3. **Eu valido** com Investidor10 e AGF
-4. **Eu aplico** filtros de risco
-5. **Eu calculo** scores
-6. **Eu gero** uma classificação final
-7. **Você registra** na Planilha Invest
-
-### Próximos Passos
-
-1. Escolha seu objetivo:
-   - **Dividendos**: Análise para renda passiva
-   - **Crescimento**: Análise para valorização
-   - **Ambos**: Análise completa
-
-2. Forneça a ação que quer analisar:
-   - Exemplo: PETR4, VALE3, ITUB4
-
-3. Aguarde a análise (15-30 minutos)
-
-4. Você receberá:
-   - Classificação (Aprovado, Pendente, Rejeitado)
-   - Score detalhado
-   - Análise de riscos
-   - Potencial de ganho
-   - Recomendações
-
----
-
-## 📊 MÓDULOS DISPONÍVEIS
-
-### Módulo 1: Análise para DIVIDENDOS
-Foco em:
-- Histórico de dividendos
-- Payout ratio
-- Rentabilidade
-- Estabilidade
-
-### Módulo 2: Análise para CRESCIMENTO
-Foco em:
-- Crescimento de receita
-- Margem de lucro
-- Retorno sobre patrimônio
-- Potencial futuro
-
-### Ambos: Análise Completa
-Combina:
-- Dividendos + Crescimento
-- Risco + Oportunidade
-- Curto + Longo prazo
-
----
-
-## 🚀 COMEÇAR ANÁLISE
-
-Qual é o seu objetivo?
-
-1. **Dividendos** (renda passiva)
-2. **Crescimento** (valorização)
-3. **Ambos** (análise completa)
-
-Qual ação você quer analisar?
-
 ---
 
 ## ⚠️ AVISO IMPORTANTE
@@ -226,15 +105,7 @@ Qual ação você quer analisar?
 Este prompt é uma **ferramenta de análise**, não uma recomendação de investimento.
 **Você é responsável por suas decisões financeiras.**
 Sempre consulte um profissional qualificado antes de investir.
-
----
-
-**Análise em progresso...** ⏳
-
-Aguarde 15-30 minutos para resultado completo.
 """
-
-# ==================== ROTAS ====================
 
 @app.route('/')
 def index():
@@ -444,7 +315,6 @@ def index():
             </div>
             
             <div class="content">
-                <!-- COLUNA 1: EXPLICAÇÕES -->
                 <div class="card">
                     <h2>O Que é Este Prompt?</h2>
                     
@@ -487,7 +357,6 @@ def index():
                     </div>
                 </div>
                 
-                <!-- COLUNA 2: AÇÕES -->
                 <div class="card">
                     <h2>Como Começar?</h2>
                     
@@ -696,28 +565,6 @@ def validar():
                 color: #c62828;
             }
             
-            .prompt-container {
-                margin-top: 30px;
-                padding: 20px;
-                background: #f5f5f5;
-                border-radius: 8px;
-                display: none;
-            }
-            
-            .prompt-container h3 {
-                color: #667eea;
-                margin-bottom: 15px;
-            }
-            
-            .copy-button {
-                background: #4caf50;
-                margin-bottom: 10px;
-            }
-            
-            .copy-button:hover {
-                background: #45a049;
-            }
-            
             .back-link {
                 text-align: center;
                 margin-top: 20px;
@@ -752,12 +599,6 @@ def validar():
             
             <div id="resultado" class="resultado"></div>
             
-            <div id="promptContainer" class="prompt-container">
-                <h3>✅ Acesso Liberado!</h3>
-                <p style="margin-bottom: 15px; color: #666;">Sua chave é válida! Você pode usar o prompt normalmente.</p>
-                <button class="copy-button" onclick="irParaHome()">← Voltar para Home</button>
-            </div>
-            
             <div class="back-link">
                 <a href="/">← Voltar</a>
             </div>
@@ -785,12 +626,10 @@ def validar():
                         resultado.className = 'resultado sucesso';
                         resultado.innerHTML = `✅ ${data.mensagem}<br>Nome: ${data.nome}<br>Dias restantes: ${data.dias_restantes}`;
                         resultado.style.display = 'block';
-                        document.getElementById('promptContainer').style.display = 'block';
                     } else {
                         resultado.className = 'resultado erro';
                         resultado.innerHTML = `❌ ${data.mensagem}`;
                         resultado.style.display = 'block';
-                        document.getElementById('promptContainer').style.display = 'none';
                     }
                 } catch (error) {
                     resultado.className = 'resultado erro';
@@ -798,10 +637,6 @@ def validar():
                     resultado.style.display = 'block';
                 }
             });
-            
-            function irParaHome() {
-                window.location.href = '/';
-            }
         </script>
     </body>
     </html>
@@ -820,24 +655,6 @@ def api_validar():
     resultado = validar_chave(chave)
     return jsonify(resultado)
 
-@app.route('/api/criar-chave', methods=['POST'])
-def api_criar_chave():
-    """API para criar nova chave (apenas para admin)"""
-    data = request.get_json()
-    email = data.get('email', '')
-    nome = data.get('nome', '')
-    tipo = data.get('tipo', 'trial')
-    
-    if not email or not nome:
-        return jsonify({'sucesso': False, 'mensagem': 'Email e nome são obrigatórios'})
-    
-    novo_item = criar_chave_novo(email, nome, tipo)
-    return jsonify({
-        'sucesso': True,
-        'chave': novo_item['chave'],
-        'mensagem': 'Chave criada com sucesso!'
-    })
-
 @app.route('/health')
 def health():
     """Health check para Render"""
@@ -845,4 +662,3 @@ def health():
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-# Updated at Sat Jun  6 16:33:22 UTC 2026
