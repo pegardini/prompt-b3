@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Prompt Fundamentalista B3 - Web Server
+Prompt Fundamentalista B3 - Web Server com PIX e QR Code
 """
 
-from flask import Flask, render_template_string, request, jsonify
+from flask import Flask, render_template_string, request, jsonify, send_file
 from datetime import datetime, timedelta
 import os
+import base64
 
 app = Flask(__name__)
 
@@ -17,31 +18,70 @@ CHAVES = {
     }
 }
 
+# Configurações
+PIX_KEY = "055005108-27"
+VALOR = 50.00
+EMAIL = "pegardini@uol.com.br"
+
+# QR Code em base64
+QR_CODE_BASE64 = None
+
+def carregar_qr_code():
+    """Carrega o QR Code como base64"""
+    global QR_CODE_BASE64
+    try:
+        with open('/home/ubuntu/qrcode_pix.png', 'rb') as f:
+            QR_CODE_BASE64 = base64.b64encode(f.read()).decode()
+    except:
+        QR_CODE_BASE64 = None
+
+carregar_qr_code()
+
 @app.route('/')
 def index():
-    html = '''<!DOCTYPE html>
+    qr_html = ""
+    if QR_CODE_BASE64:
+        qr_html = f'<img src="data:image/png;base64,{QR_CODE_BASE64}" alt="QR Code PIX" style="width: 250px; height: 250px; margin: 20px 0; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">'
+    
+    html = f'''<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Prompt Fundamentalista B3</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { text-align: center; color: white; margin-bottom: 40px; }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .card { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .card h2 { color: #667eea; margin-bottom: 20px; }
-        .card p { color: #555; line-height: 1.8; margin-bottom: 15px; }
-        .card ul { margin-left: 20px; color: #555; }
-        .card li { margin-bottom: 10px; }
-        .btn { display: block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border: none; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; text-align: center; text-decoration: none; }
-        .btn:hover { opacity: 0.9; }
-        .info { background: #e7f3ff; border-left: 4px solid #2196F3; padding: 15px; margin: 15px 0; border-radius: 5px; color: #1565c0; }
-        .warning { background: #ffebee; border: 2px solid #f44336; padding: 15px; margin: 15px 0; border-radius: 5px; color: #c62828; }
-        @media (max-width: 768px) { .content { grid-template-columns: 1fr; } .header h1 { font-size: 1.8em; } }
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 20px; }}
+        .container {{ max-width: 900px; margin: 0 auto; }}
+        .header {{ text-align: center; color: white; margin-bottom: 40px; }}
+        .header h1 {{ font-size: 2.5em; margin-bottom: 10px; font-weight: 700; }}
+        .header p {{ font-size: 1.1em; opacity: 0.9; }}
+        .content {{ display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }}
+        .card {{ background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }}
+        .card h2 {{ color: #667eea; margin-bottom: 20px; font-size: 1.5em; }}
+        .card p {{ color: #555; line-height: 1.8; margin-bottom: 15px; }}
+        .card ul {{ margin-left: 20px; color: #555; }}
+        .card li {{ margin-bottom: 10px; }}
+        .btn {{ display: block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border: none; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; width: 100%; margin-top: 20px; text-align: center; text-decoration: none; transition: all 0.3s; }}
+        .btn:hover {{ opacity: 0.9; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }}
+        .btn-secondary {{ background: #e0e0e0; color: #333; }}
+        .btn-secondary:hover {{ background: #d0d0d0; }}
+        .info {{ background: #e7f3ff; border-left: 4px solid #2196F3; padding: 15px; margin: 15px 0; border-radius: 5px; color: #1565c0; }}
+        .warning {{ background: #ffebee; border: 2px solid #f44336; padding: 15px; margin: 15px 0; border-radius: 5px; color: #c62828; }}
+        .price {{ background: #fff3cd; border: 2px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; color: #856404; }}
+        .price h3 {{ font-size: 1.8em; margin-bottom: 10px; font-weight: 700; }}
+        .qr-container {{ text-align: center; background: #f5f5f5; padding: 30px; border-radius: 8px; margin: 20px 0; }}
+        .qr-container p {{ color: #666; margin-top: 15px; font-size: 0.95em; }}
+        .pix-key {{ background: white; border: 2px solid #667eea; padding: 12px; border-radius: 8px; margin: 10px 0; font-family: monospace; font-weight: bold; color: #667eea; word-break: break-all; }}
+        .email-link {{ color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer; }}
+        .email-link:hover {{ text-decoration: underline; }}
+        .step {{ margin-bottom: 20px; }}
+        .step-number {{ display: inline-block; background: #667eea; color: white; width: 30px; height: 30px; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px; font-weight: bold; }}
+        .step-text {{ display: inline-block; color: #333; }}
+        @media (max-width: 768px) {{ 
+            .content {{ grid-template-columns: 1fr; }} 
+            .header h1 {{ font-size: 1.8em; }} 
+        }}
     </style>
 </head>
 <body>
@@ -54,7 +94,9 @@ def index():
         <div class="content">
             <div class="card">
                 <h2>O Que é Este Prompt?</h2>
+                
                 <p>Um sistema completo de análise fundamentalista para ações brasileiras.</p>
+                
                 <ul>
                     <li>✅ Análise de lucro e rentabilidade</li>
                     <li>✅ Dividendos e proventos</li>
@@ -62,10 +104,12 @@ def index():
                     <li>✅ Riscos e oportunidades</li>
                     <li>✅ Comparação com concorrentes</li>
                 </ul>
+                
                 <div class="info">
                     <strong>📚 16 Módulos Técnicos</strong>
                     <p style="margin-top: 10px; font-size: 0.95em;">Análise completa com papel, escopo, dados críticos e muito mais.</p>
                 </div>
+                
                 <div class="warning">
                     <strong>⚠️ Aviso Importante</strong>
                     <p>Este é uma ferramenta de análise, não recomendação de investimento.</p>
@@ -74,24 +118,52 @@ def index():
             
             <div class="card">
                 <h2>Como Começar?</h2>
-                <p><strong>1. Baixe o Prompt</strong> - Clique no botão abaixo</p>
-                <p><strong>2. Acesse Claude</strong> - Vá para claude.ai</p>
-                <p><strong>3. Cole o Prompt</strong> - Cole na conversa</p>
-                <p><strong>4. Forneça a Chave</strong> - Quando pedir</p>
                 
-                <button class="btn" onclick="baixarPrompt()">📥 Baixar Prompt</button>
-                <button class="btn" onclick="window.location.href='/validar'" style="background: #e0e0e0; color: #333;">🔐 Validar Chave</button>
+                <div class="price">
+                    <h3>💰 R$ {VALOR:.2f}/ano</h3>
+                    <p>Licença anual com suporte</p>
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <span class="step-text"><strong>Escaneie o QR Code</strong></span>
+                </div>
+                
+                <div class="qr-container">
+                    {qr_html}
+                    <p><strong>Ou copie a chave PIX:</strong></p>
+                    <div class="pix-key">{PIX_KEY}</div>
+                </div>
+                
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <span class="step-text"><strong>Envie o Comprovante</strong></span>
+                </div>
+                
+                <p style="margin-top: 15px; color: #555;">Clique no botão abaixo para enviar o comprovante:</p>
+                
+                <a href="mailto:{EMAIL}?subject=Comprovante%20de%20Pagamento%20-%20Prompt%20B3&body=Olá%2C%0A%0AEstou%20enviando%20o%20comprovante%20de%20pagamento%20do%20Prompt%20Fundamentalista%20B3.%0A%0AObrigado!" class="btn">📧 Enviar Comprovante</a>
+                
+                <div class="step" style="margin-top: 20px;">
+                    <span class="step-number">3</span>
+                    <span class="step-text"><strong>Receba a Chave</strong></span>
+                </div>
+                
+                <p style="color: #555; margin-bottom: 15px;">Você receberá sua chave de licença por email em até 24 horas.</p>
+                
+                <button class="btn" onclick="baixarPrompt()">📥 Baixar Prompt (Teste Grátis)</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/validar'">🔐 Validar Chave</button>
                 
                 <div class="info" style="margin-top: 30px;">
                     <strong>💡 Teste Grátis</strong>
-                    <p style="margin-top: 10px;">7 dias de teste. Depois, compre uma licença paga!</p>
+                    <p style="margin-top: 10px;">7 dias de teste. Depois, compre a licença anual!</p>
                 </div>
             </div>
         </div>
     </div>
     
     <script>
-        function baixarPrompt() {
+        function baixarPrompt() {{
             const prompt = "# PROMPT FUNDAMENTALISTA B3\\n\\n## Validação de Chave\\nCole sua chave aqui: PROMPT-TRIAL-XXXXXXX-XXXXXXX-7DIAS\\n\\n## Bem-vindo!\\nEste é um sistema de análise fundamentalista para ações da B3.\\n\\nVocê pode analisar:\\n- Lucro e rentabilidade\\n- Dividendos\\n- Dívida\\n- Riscos\\n- Oportunidades\\n\\n## Aviso\\nEste é uma ferramenta de análise, não recomendação de investimento.";
             const element = document.createElement('a');
             element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(prompt));
@@ -100,7 +172,7 @@ def index():
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
-        }
+        }}
     </script>
 </body>
 </html>'''
@@ -116,7 +188,7 @@ def validar():
     <title>Validar Chave</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .container { background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 500px; width: 100%; padding: 40px; }
         .header { text-align: center; margin-bottom: 30px; }
         .header h1 { color: #667eea; font-size: 28px; margin-bottom: 10px; }
