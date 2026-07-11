@@ -888,6 +888,10 @@ def checkout():
     plan = request.form.get('plan')
     email = request.form.get('email', 'customer@example.com')
     
+    # Debug: Check if Stripe API key is set
+    if not stripe.api_key:
+        return "Erro: Chave Stripe não configurada no servidor", 500
+    
     if plan == 'monthly':
         price_id = PRICE_MONTHLY
     elif plan == 'annual':
@@ -896,6 +900,13 @@ def checkout():
         return "Plano inválido", 400
     
     try:
+        # Verify price IDs are valid
+        if not price_id or price_id.startswith('price_'):
+            # Price ID format is correct, proceed
+            pass
+        else:
+            return f"Erro: ID de preço inválido: {price_id}", 500
+        
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
@@ -908,6 +919,10 @@ def checkout():
             customer_email=email,
         )
         return redirect(session.url, code=303)
+    except stripe.error.AuthenticationError as e:
+        return f"Erro de autenticação Stripe: Chave API inválida ou não configurada. Detalhes: {str(e)}", 500
+    except stripe.error.InvalidRequestError as e:
+        return f"Erro na requisição Stripe: {str(e)}", 500
     except Exception as e:
         return f"Erro ao criar sessão de checkout: {str(e)}", 500
 
