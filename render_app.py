@@ -793,30 +793,183 @@ def comprar():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Comprar 1 Ano</title>
+        <title>Planos e Preços</title>
+        <style>{CSS}</style>
+        <script src="https://js.stripe.com/v3/"></script>
+    </head>
+    <body>
+        {NAV}
+        <div class="container">
+            <h1>💳 Escolha seu Plano</h1>
+            <p style="text-align: center; margin-bottom: 40px; font-size: 1.1em;">Acesso completo ao Prompt Fundamentalista B3 com atualizações constantes</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 0 auto;">
+                <!-- Plano Mensal -->
+                <div class="card card-destaque" style="text-align: center; border: 2px solid rgba(255,215,0,0.3);">
+                    <h2 style="color: #ffd700; margin-bottom: 10px;">Mensal</h2>
+                    <h1 style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 25<span style="font-size: 0.6em;">/mês</span></h1>
+                    <p style="color: #999; margin-bottom: 30px;">Cancele a qualquer momento</p>
+                    
+                    <form action="/checkout" method="POST" style="margin-bottom: 20px;">
+                        <input type="hidden" name="plan" value="monthly">
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em;">Comprar Agora</button>
+                    </form>
+                    
+                    <ul style="text-align: left; color: #ccc;">
+                        <li>✅ Prompt completo</li>
+                        <li>✅ Chave de 1 mês</li>
+                        <li>✅ Relatório Visual</li>
+                        <li>✅ Exportação MD/PDF</li>
+                        <li>✅ Suporte por email</li>
+                        <li>✅ Atualizações incluídas</li>
+                    </ul>
+                </div>
+                
+                <!-- Plano Anual -->
+                <div class="card card-destaque" style="text-align: center; border: 3px solid #ffd700; position: relative;">
+                    <div style="position: absolute; top: -15px; right: 20px; background: #ffd700; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">MELHOR VALOR</div>
+                    <h2 style="color: #ffd700; margin-bottom: 10px; margin-top: 10px;">Anual</h2>
+                    <h1 style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 180<span style="font-size: 0.6em;">/ano</span></h1>
+                    <p style="color: #999; margin-bottom: 30px;"><strong style="color: #ffd700;">Economize R$ 120!</strong> (vs. mensal)</p>
+                    
+                    <form action="/checkout" method="POST" style="margin-bottom: 20px;">
+                        <input type="hidden" name="plan" value="annual">
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em; background: #ffd700; color: #000;">Comprar Agora</button>
+                    </form>
+                    
+                    <ul style="text-align: left; color: #ccc;">
+                        <li>✅ Prompt completo</li>
+                        <li>✅ Chave de 1 ano</li>
+                        <li>✅ Relatório Visual</li>
+                        <li>✅ Exportação MD/PDF</li>
+                        <li>✅ Suporte por email</li>
+                        <li>✅ Atualizações incluídas</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="max-width: 800px; margin: 60px auto; padding: 30px; background: rgba(255,215,0,0.05); border-radius: 10px; border-left: 4px solid #ffd700;">
+                <h3 style="color: #ffd700; margin-bottom: 15px;">❓ Dúvidas sobre Pagamento?</h3>
+                <p style="color: #ccc; line-height: 1.8;">
+                    <strong>Seguro:</strong> Usamos Stripe, a plataforma mais confiável do mundo para pagamentos.<br>
+                    <strong>Automático:</strong> Sua chave é ativada instantaneamente após o pagamento.<br>
+                    <strong>Suporte:</strong> Qualquer dúvida, envie email para <strong>promptpegardini@gmail.com</strong>
+                </p>
+            </div>
+        </div>
+        {FOOTER}
+    </body>
+    </html>
+    """
+    return html
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    plan = request.form.get('plan')
+    email = request.form.get('email', 'customer@example.com')
+    
+    if plan == 'monthly':
+        price_id = PRICE_MONTHLY
+    elif plan == 'annual':
+        price_id = PRICE_ANNUAL
+    else:
+        return "Plano inválido", 400
+    
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': price_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=request.host_url.rstrip('/') + '/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.host_url.rstrip('/') + '/cancel',
+            customer_email=email,
+        )
+        return redirect(session.url, code=303)
+    except Exception as e:
+        return f"Erro ao criar sessão de checkout: {str(e)}", 500
+
+@app.route('/success')
+def success():
+    session_id = request.args.get('session_id')
+    if not session_id:
+        return "Sessão não encontrada", 400
+    
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        email = session.customer_email
+        
+        # Generate license key for subscription
+        dias = 30 if session.subscription else 365
+        license_key = gerar_chave(dias=dias)
+        
+        # Update customer in database
+        create_customer(email, license_key, stripe_customer_id=session.customer)
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Pagamento Confirmado</title>
+            <style>{CSS}</style>
+        </head>
+        <body>
+            {NAV}
+            <div class="container">
+                <div class="card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+                    <h1 style="color: #ffd700; font-size: 3em; margin-bottom: 20px;">✅ Pagamento Confirmado!</h1>
+                    <p style="font-size: 1.2em; margin-bottom: 30px;">Sua assinatura foi ativada com sucesso.</p>
+                    
+                    <div style="background: rgba(255,215,0,0.1); padding: 20px; border-radius: 10px; margin: 30px 0;">
+                        <h3 style="color: #ffd700; margin-bottom: 15px;">🔑 Sua Chave de Licença:</h3>
+                        <p style="font-family: monospace; font-size: 1.1em; background: #000; padding: 15px; border-radius: 5px; word-break: break-all;">{license_key}</p>
+                        <p style="color: #999; margin-top: 10px; font-size: 0.9em;">Copie e guarde em um local seguro</p>
+                    </div>
+                    
+                    <div style="background: rgba(255,215,0,0.1); padding: 20px; border-radius: 10px; margin: 30px 0;">
+                        <h3 style="color: #ffd700; margin-bottom: 15px;">📧 Próximos Passos:</h3>
+                        <ol style="text-align: left; color: #ccc;">
+                            <li>Vá para <a href="/relatorio" style="color: #ffd700;">Relatório Visual</a></li>
+                            <li>Cole a chave acima no campo de validação</li>
+                            <li>Use o prompt com a chave em qualquer IA</li>
+                            <li>Gere análises profissionais de ações B3</li>
+                        </ol>
+                    </div>
+                    
+                    <a href="/relatorio" class="btn btn-gold" style="padding: 14px 40px; font-size: 1.1em; text-decoration: none; display: inline-block; margin-top: 20px;">Ir para Relatório Visual</a>
+                </div>
+            </div>
+            {FOOTER}
+        </body>
+        </html>
+        """
+        return html
+    except Exception as e:
+        return f"Erro ao processar pagamento: {str(e)}", 500
+
+@app.route('/cancel')
+def cancel():
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pagamento Cancelado</title>
         <style>{CSS}</style>
     </head>
     <body>
         {NAV}
         <div class="container">
-            <h1>💳 Comprar 1 Ano de Acesso</h1>
-            <div class="card card-destaque" style="max-width: 600px; margin: 0 auto; text-align: center;">
-                <h2>R$ 180,00</h2>
-                <p style="font-size: 1.2em; margin-bottom: 20px;">Acesso completo por 1 ano</p>
-                
-                <a href="/subscribe?plan=annual" class="btn btn-gold" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">Pagar com Cartão</a>
-                
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,215,0,0.2);">
-                    <h3>✅ O que você recebe:</h3>
-                    <ul style="text-align: left;">
-                        <li>✅ Prompt Fundamentalista B3 completo</li>
-                        <li>✅ Chave de licença válida por 1 ano</li>
-                        <li>✅ Acesso ao Relatório Visual</li>
-                        <li>✅ Exportação em Markdown e PDF</li>
-                        <li>✅ Suporte por email</li>
-                        <li>✅ Atualizações automáticas</li>
-                    </ul>
-                </div>
+            <div class="card" style="max-width: 600px; margin: 40px auto; text-align: center;">
+                <h1 style="color: #ff6b6b; font-size: 3em; margin-bottom: 20px;">❌ Pagamento Cancelado</h1>
+                <p style="font-size: 1.2em; margin-bottom: 30px;">Você cancelou o processo de pagamento.</p>
+                <p style="color: #999; margin-bottom: 30px;">Se foi um erro, você pode tentar novamente.</p>
+                <a href="/comprar" class="btn btn-gold" style="padding: 14px 40px; font-size: 1.1em; text-decoration: none; display: inline-block;">Voltar para Planos</a>
             </div>
         </div>
         {FOOTER}
