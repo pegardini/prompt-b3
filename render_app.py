@@ -832,6 +832,7 @@ def comprar():
                     
                     <form action="/checkout" method="POST" style="margin-bottom: 20px;">
                         <input type="hidden" name="plan" value="monthly">
+                        <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
                         <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em;">Comprar Agora</button>
                     </form>
                     
@@ -854,6 +855,7 @@ def comprar():
                     
                     <form action="/checkout" method="POST" style="margin-bottom: 20px;">
                         <input type="hidden" name="plan" value="annual">
+                        <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
                         <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em; background: #ffd700; color: #000;">Comprar Agora</button>
                     </form>
                     
