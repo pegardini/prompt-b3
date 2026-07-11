@@ -567,6 +567,13 @@ def webhook():
         c = conn.cursor()
         c.execute('UPDATE customers SET subscription_status = ? WHERE stripe_customer_id = ?',
                   (status, customer_id))
+        
+        # Generate new license key if active
+        if status == 'active':
+            license_key = gerar_chave(dias=365)
+            c.execute('UPDATE customers SET license_key = ? WHERE stripe_customer_id = ?',
+                      (license_key, customer_id))
+        
         conn.commit()
         conn.close()
     
@@ -582,7 +589,20 @@ def webhook():
         conn.commit()
         conn.close()
     
-    return jsonio.jsonify(success=True)
+    elif event['type'] == 'invoice.payment_failed':
+        # Handle failed payment
+        invoice = event['data']['object']
+        customer_id = invoice.get('customer')
+        
+        # Update subscription status
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute('UPDATE customers SET subscription_status = ? WHERE stripe_customer_id = ?',
+                  ('payment_failed', customer_id))
+        conn.commit()
+        conn.close()
+    
+    return jsonify(success=True)
 
 @app.route('/receber-ebook', methods=['POST'])
 def receber_ebook():
