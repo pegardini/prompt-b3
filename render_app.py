@@ -629,6 +629,15 @@ def get_license_key():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/debug-customers')
+def debug_customers():
+    """Debug endpoint - shows all customers in database (remove in production)"""
+    try:
+        customers = load_customers()
+        return jsonify(customers)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/validate-key')
 def validate_key():
     """API endpoint to validate license key - used by ChatGPT/Claude prompts"""
