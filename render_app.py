@@ -691,6 +691,43 @@ def debug_time():
         'second': now.second
     })
 
+@app.route('/api/debug-validate-key')
+def debug_validate_key():
+    """Debug endpoint - shows validation details for a key"""
+    key = request.args.get('key')
+    if not key:
+        return jsonify({'error': 'Key required'}), 400
+    
+    try:
+        parts = key.split('-')
+        now = datetime.utcnow()
+        
+        if len(parts) < 4:
+            return jsonify({
+                'key': key,
+                'error': f'Invalid format: only {len(parts)} parts',
+                'parts': parts
+            })
+        
+        expiry_str = parts[3]
+        expiry_date = datetime.strptime(expiry_str, '%Y%m%d')
+        is_valid = now < expiry_date
+        
+        return jsonify({
+            'key': key,
+            'parts': parts,
+            'expiry_string': expiry_str,
+            'expiry_date': expiry_date.isoformat(),
+            'server_time': now.isoformat(),
+            'is_valid': is_valid,
+            'days_remaining': (expiry_date - now).days
+        })
+    except Exception as e:
+        return jsonify({
+            'key': key,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/validate-key')
 def validate_key():
     """API endpoint to validate license key - used by ChatGPT/Claude prompts"""
