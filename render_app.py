@@ -22,20 +22,31 @@ def configure_stripe():
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_B3_v7.md')
 EBOOK_FILE = os.path.join(BASE_DIR, 'static', 'ebook_prompt_b3.pdf')
-DB_FILE = os.path.join(BASE_DIR, 'customers.db')
+DB_FILE = '/tmp/customers.json'  # Use JSON file instead of SQLite
 
-# Initialize database
+# Initialize database (JSON-based)
 def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS customers
-                 (id INTEGER PRIMARY KEY, email TEXT UNIQUE, license_key TEXT, 
-                  trial_expiry TEXT, stripe_customer_id TEXT, subscription_id TEXT, 
-                  subscription_status TEXT, created_at TEXT)''')
-    conn.commit()
-    conn.close()
+    """Initialize JSON database if it doesn't exist"""
+    if not os.path.exists(DB_FILE):
+        with open(DB_FILE, 'w') as f:
+            json.dump({}, f)
 
 init_db()
+
+def load_customers():
+    """Load all customers from JSON file"""
+    try:
+        if os.path.exists(DB_FILE):
+            with open(DB_FILE, 'r') as f:
+                return json.load(f)
+    except:
+        pass
+    return {}
+
+def save_customers(data):
+    """Save customers to JSON file"""
+    with open(DB_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
 
 def gerar_chave(dias=7):
     p1 = ''.join(random.choices(string.digits, k=5))
@@ -69,39 +80,56 @@ def validate_license(chave):
         return False
 
 def get_customer(email):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('SELECT * FROM customers WHERE email = ?', (email,))
-    customer = c.fetchone()
-    conn.close()
-    return customer
+    """Get customer data from JSON file"""
+    customers = load_customers()
+    if email in customers:
+        c = customers[email]
+        # Return tuple format: (id, email, license_key, trial_expiry, stripe_customer_id, subscription_id, subscription_status, created_at)
+        return (c.get('id'), email, c.get('license_key'), c.get('trial_expiry'), 
+                c.get('stripe_customer_id'), c.get('subscription_id'), 
+                c.get('subscription_status'), c.get('created_at'))
+    return None
 
 def create_customer(email, license_key, trial_expiry=None, stripe_customer_id=None):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    try:
-        c.execute('''INSERT INTO customers (email, license_key, trial_expiry, stripe_customer_id, created_at)
-                     VALUES (?, ?, ?, ?, ?)''',
-                  (email, license_key, trial_expiry, stripe_customer_id, datetime.utcnow().isoformat()))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        c.execute('''UPDATE customers SET license_key = ?, trial_expiry = ?, stripe_customer_id = ?
-                     WHERE email = ?''',
-                  (license_key, trial_expiry, stripe_customer_id, email))
-        conn.commit()
-    conn.close()
+    """Create or update customer in JSON file"""
+    customers = load_customers()
+    customers[email] = {
+        'id': len(customers) + 1,
+        'email': email,
+        'license_key': license_key,
+        'trial_expiry': trial_expiry,
+        'stripe_customer_id': stripe_customer_id,
+        'subscription_id': None,
+        'subscription_status': None,
+        'created_at': datetime.utcnow().isoformat()
+    }
+    save_customers(customers)
 
 def update_subscription(email, stripe_customer_id, subscription_id, status):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
+    """Update subscription in JSON file and generate license key"""
+    customers = load_customers()
     # Generate annual license key
     license_key = gerar_chave(dias=365)
-    c.execute('''UPDATE customers SET stripe_customer_id = ?, subscription_id = ?, 
-                 subscription_status = ?, license_key = ?, trial_expiry = NULL
-                 WHERE email = ?''',
-              (stripe_customer_id, subscription_id, status, license_key, email))
-    conn.commit()
-    conn.close()
+    
+    if email in customers:
+        customers[email]['stripe_customer_id'] = stripe_customer_id
+        customers[email]['subscription_id'] = subscription_id
+        customers[email]['subscription_status'] = status
+        customers[email]['license_key'] = license_key
+        customers[email]['trial_expiry'] = None
+    else:
+        customers[email] = {
+            'id': len(customers) + 1,
+            'email': email,
+            'license_key': license_key,
+            'trial_expiry': None,
+            'stripe_customer_id': stripe_customer_id,
+            'subscription_id': subscription_id,
+            'subscription_status': status,
+            'created_at': datetime.utcnow().isoformat()
+        }
+    
+    save_customers(customers)
 
 CSS = """
 * { margin: 0; padding: 0; box-sizing: border-box; }
