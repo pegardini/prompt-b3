@@ -23,6 +23,15 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_B3_v7.md')
 EBOOK_FILE = os.path.join(BASE_DIR, 'static', 'ebook_prompt_b3.pdf')
 DB_FILE = '/tmp/customers.json'  # Use JSON file instead of SQLite
+LOG_FILE = '/tmp/app_debug.log'  # Debug log file
+
+def log_debug(message):
+    """Write debug message to log file"""
+    try:
+        with open(LOG_FILE, 'a') as f:
+            f.write(f"[{datetime.utcnow().isoformat()}] {message}\n")
+    except:
+        pass
 
 # Initialize database (JSON-based)
 def init_db():
@@ -45,8 +54,13 @@ def load_customers():
 
 def save_customers(data):
     """Save customers to JSON file"""
-    with open(DB_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+    try:
+        with open(DB_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        log_debug(f"Saved {len(data)} customers to database")
+    except Exception as e:
+        log_debug(f"ERROR saving customers: {str(e)}")
+        raise
 
 def gerar_chave(dias=7):
     p1 = ''.join(random.choices(string.digits, k=5))
@@ -107,29 +121,38 @@ def create_customer(email, license_key, trial_expiry=None, stripe_customer_id=No
 
 def update_subscription(email, stripe_customer_id, subscription_id, status):
     """Update subscription in JSON file and generate license key"""
-    customers = load_customers()
-    # Generate annual license key
-    license_key = gerar_chave(dias=365)
-    
-    if email in customers:
-        customers[email]['stripe_customer_id'] = stripe_customer_id
-        customers[email]['subscription_id'] = subscription_id
-        customers[email]['subscription_status'] = status
-        customers[email]['license_key'] = license_key
-        customers[email]['trial_expiry'] = None
-    else:
-        customers[email] = {
-            'id': len(customers) + 1,
-            'email': email,
-            'license_key': license_key,
-            'trial_expiry': None,
-            'stripe_customer_id': stripe_customer_id,
-            'subscription_id': subscription_id,
-            'subscription_status': status,
-            'created_at': datetime.utcnow().isoformat()
-        }
-    
-    save_customers(customers)
+    try:
+        log_debug(f"update_subscription called for {email}")
+        customers = load_customers()
+        # Generate annual license key
+        license_key = gerar_chave(dias=365)
+        log_debug(f"Generated license key: {license_key}")
+        
+        if email in customers:
+            log_debug(f"Updating existing customer: {email}")
+            customers[email]['stripe_customer_id'] = stripe_customer_id
+            customers[email]['subscription_id'] = subscription_id
+            customers[email]['subscription_status'] = status
+            customers[email]['license_key'] = license_key
+            customers[email]['trial_expiry'] = None
+        else:
+            log_debug(f"Creating new customer: {email}")
+            customers[email] = {
+                'id': len(customers) + 1,
+                'email': email,
+                'license_key': license_key,
+                'trial_expiry': None,
+                'stripe_customer_id': stripe_customer_id,
+                'subscription_id': subscription_id,
+                'subscription_status': status,
+                'created_at': datetime.utcnow().isoformat()
+            }
+        
+        save_customers(customers)
+        log_debug(f"Successfully saved customer: {email}")
+    except Exception as e:
+        log_debug(f"ERROR in update_subscription: {str(e)}")
+        raise
 
 CSS = """
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -637,6 +660,19 @@ def debug_customers():
         return jsonify(customers)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/debug-logs')
+def debug_logs():
+    """Debug endpoint - shows application logs"""
+    try:
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, 'r') as f:
+                logs = f.read()
+            return f"<pre>{logs}</pre>", 200, {'Content-Type': 'text/html'}
+        else:
+            return "No logs yet", 200
+    except Exception as e:
+        return f"Error reading logs: {str(e)}", 500
 
 @app.route('/api/validate-key')
 def validate_key():
