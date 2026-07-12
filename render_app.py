@@ -629,6 +629,57 @@ def get_license_key():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/validate-key')
+def validate_key():
+    """API endpoint to validate license key - used by ChatGPT/Claude prompts"""
+    key = request.args.get('key')
+    if not key:
+        return jsonify({'valid': False, 'error': 'Chave não fornecida'}), 400
+    
+    try:
+        customers = load_customers()
+        
+        # Find customer with this license key
+        for email, customer_data in customers.items():
+            if customer_data.get('license_key') == key:
+                # Validate expiry date from key
+                if not validate_license(key):
+                    return jsonify({
+                        'valid': False,
+                        'error': 'Chave expirada',
+                        'email': email
+                    })
+                
+                # Check subscription status
+                if customer_data.get('subscription_status') != 'active':
+                    return jsonify({
+                        'valid': False,
+                        'error': 'Assinatura não está ativa',
+                        'email': email,
+                        'status': customer_data.get('subscription_status')
+                    })
+                
+                # Key is valid
+                return jsonify({
+                    'valid': True,
+                    'email': email,
+                    'expires': customer_data.get('license_key', '').split('-')[2] if '-' in customer_data.get('license_key', '') else 'N/A',
+                    'status': 'active',
+                    'plan': 'annual' if '1ANO' in key else 'monthly'
+                })
+        
+        # Key not found
+        return jsonify({
+            'valid': False,
+            'error': 'Chave não encontrada no sistema'
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'valid': False,
+            'error': f'Erro ao validar chave: {str(e)}'
+        }), 500
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     payload = request.get_data()
@@ -652,6 +703,7 @@ def webhook():
         # Use getattr for safe access to Stripe object attributes
         customer_id = getattr(session, 'customer', None) or session.get('customer', None) if isinstance(session, dict) else None
         subscription_id = getattr(session, 'subscription', None) or session.get('subscription', None) if isinstance(session, dict) else None
+        customer_email = getattr(session, 'customer_details', {}).email if hasattr(getattr(session, 'customer_details', None), 'email') else None
         
         if customer_id:
             # Determine plan duration from metadata or subscription
@@ -660,76 +712,83 @@ def webhook():
             # Generate license key
             license_key = gerar_chave(dias=dias)
             
-            # Update in database
-            conn = sqlite3.connect(DB_FILE)
-            c = conn.cursor()
-            c.execute('UPDATE customers SET license_key = ?, subscription_id = ?, subscription_status = ? WHERE stripe_customer_id = ?',
-                      (license_key, subscription_id, 'active', customer_id))
-            conn.commit()
-            conn.close()
+            # Update in database using JSON functions
+            if customer_email:
+                update_subscription(customer_email, customer_id, subscription_id, 'active')
+            else:
+                # Fallback: update by stripe_customer_id
+                customers = load_customers()
+                for email, cust in customers.items():
+                    if cust.get('stripe_customer_id') == customer_id:
+                        cust['license_key'] = license_key
+                        cust['subscription_id'] = subscription_id
+                        cust['subscription_status'] = 'active'
+                        save_customers(customers)
+                        break
     
     elif event['type'] == 'customer.subscription.updated':
         subscription = event['data']['object']
         customer_id = subscription['customer']
         status = subscription['status']
         
-        # Update in database
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute('UPDATE customers SET subscription_status = ? WHERE stripe_customer_id = ?',
-                  (status, customer_id))
-        
-        # Generate new license key if active
-        if status == 'active':
-            license_key = gerar_chave(dias=365)
-            c.execute('UPDATE customers SET license_key = ? WHERE stripe_customer_id = ?',
-                      (license_key, customer_id))
-        
-        conn.commit()
-        conn.close()
+        # Update in database using JSON functions
+        customers = load_customers()
+        for email, cust in customers.items():
+            if cust.get('stripe_customer_id') == customer_id:
+                cust['subscription_status'] = status
+                
+                # Generate new license key if active (renewal)
+                if status == 'active':
+                    license_key = gerar_chave(dias=365)
+                    cust['license_key'] = license_key
+                
+                save_customers(customers)
+                break
     
     elif event['type'] == 'customer.subscription.deleted':
         subscription = event['data']['object']
         customer_id = subscription['customer']
         
-        # Mark as cancelled
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute('UPDATE customers SET subscription_status = ? WHERE stripe_customer_id = ?',
-                  ('cancelled', customer_id))
-        conn.commit()
-        conn.close()
+        # Mark as cancelled using JSON functions
+        customers = load_customers()
+        for email, cust in customers.items():
+            if cust.get('stripe_customer_id') == customer_id:
+                cust['subscription_status'] = 'cancelled'
+                save_customers(customers)
+                break
     
     elif event['type'] == 'invoice.payment_succeeded':
-        # Handle successful payment
+        # Handle successful payment (renewal)
         invoice = event['data']['object']
         # Use getattr for safe access to Stripe object attributes
         customer_id = getattr(invoice, 'customer', None) or invoice.get('customer', None) if isinstance(invoice, dict) else None
         subscription_id = getattr(invoice, 'subscription', None) or invoice.get('subscription', None) if isinstance(invoice, dict) else None
         
         if customer_id and subscription_id:
-            # Generate license key for annual subscription
+            # Generate NEW license key for renewal
             license_key = gerar_chave(dias=365)
             
-            conn = sqlite3.connect(DB_FILE)
-            c = conn.cursor()
-            c.execute('UPDATE customers SET license_key = ?, subscription_status = ? WHERE stripe_customer_id = ?',
-                      (license_key, 'active', customer_id))
-            conn.commit()
-            conn.close()
+            # Update using JSON functions
+            customers = load_customers()
+            for email, cust in customers.items():
+                if cust.get('stripe_customer_id') == customer_id:
+                    cust['license_key'] = license_key
+                    cust['subscription_status'] = 'active'
+                    save_customers(customers)
+                    break
     
     elif event['type'] == 'invoice.payment_failed':
         # Handle failed payment
         invoice = event['data']['object']
         customer_id = invoice.get('customer')
         
-        # Update subscription status
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute('UPDATE customers SET subscription_status = ? WHERE stripe_customer_id = ?',
-                  ('payment_failed', customer_id))
-        conn.commit()
-        conn.close()
+        # Update subscription status using JSON functions
+        customers = load_customers()
+        for email, cust in customers.items():
+            if cust.get('stripe_customer_id') == customer_id:
+                cust['subscription_status'] = 'payment_failed'
+                save_customers(customers)
+                break
     
     # Always return 200 to acknowledge receipt
     return jsonify(success=True), 200
