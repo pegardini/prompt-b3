@@ -677,6 +677,20 @@ def debug_logs():
     except Exception as e:
         return f"Error reading logs: {str(e)}", 500
 
+@app.route('/api/debug-time')
+def debug_time():
+    """Debug endpoint - shows server time"""
+    now = datetime.utcnow()
+    return jsonify({
+        'server_time_utc': now.isoformat(),
+        'year': now.year,
+        'month': now.month,
+        'day': now.day,
+        'hour': now.hour,
+        'minute': now.minute,
+        'second': now.second
+    })
+
 @app.route('/api/validate-key')
 def validate_key():
     """API endpoint to validate license key - used by ChatGPT/Claude prompts"""
