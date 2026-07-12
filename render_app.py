@@ -576,8 +576,9 @@ def webhook():
     if event['type'] == 'checkout.session.completed':
         # Handle successful checkout
         session = event['data']['object']
-        customer_id = session.get('customer')
-        subscription_id = session.get('subscription')
+        # Use getattr for safe access to Stripe object attributes
+        customer_id = getattr(session, 'customer', None) or session.get('customer', None) if isinstance(session, dict) else None
+        subscription_id = getattr(session, 'subscription', None) or session.get('subscription', None) if isinstance(session, dict) else None
         
         if customer_id:
             # Determine plan duration from metadata or subscription
@@ -629,8 +630,9 @@ def webhook():
     elif event['type'] == 'invoice.payment_succeeded':
         # Handle successful payment
         invoice = event['data']['object']
-        customer_id = invoice.get('customer')
-        subscription_id = invoice.get('subscription')
+        # Use getattr for safe access to Stripe object attributes
+        customer_id = getattr(invoice, 'customer', None) or invoice.get('customer', None) if isinstance(invoice, dict) else None
+        subscription_id = getattr(invoice, 'subscription', None) or invoice.get('subscription', None) if isinstance(invoice, dict) else None
         
         if customer_id and subscription_id:
             # Generate license key for annual subscription
