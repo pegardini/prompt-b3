@@ -573,7 +573,28 @@ def webhook():
     except stripe.error.SignatureVerificationError:
         return 'Invalid signature', 400
     
-    if event['type'] == 'customer.subscription.updated':
+    if event['type'] == 'checkout.session.completed':
+        # Handle successful checkout
+        session = event['data']['object']
+        customer_id = session.get('customer')
+        subscription_id = session.get('subscription')
+        
+        if customer_id:
+            # Determine plan duration from metadata or subscription
+            dias = 365  # Default to annual
+            
+            # Generate license key
+            license_key = gerar_chave(dias=dias)
+            
+            # Update in database
+            conn = sqlite3.connect(DB_FILE)
+            c = conn.cursor()
+            c.execute('UPDATE customers SET license_key = ?, subscription_id = ?, subscription_status = ? WHERE stripe_customer_id = ?',
+                      (license_key, subscription_id, 'active', customer_id))
+            conn.commit()
+            conn.close()
+    
+    elif event['type'] == 'customer.subscription.updated':
         subscription = event['data']['object']
         customer_id = subscription['customer']
         status = subscription['status']
@@ -605,6 +626,23 @@ def webhook():
         conn.commit()
         conn.close()
     
+    elif event['type'] == 'invoice.payment_succeeded':
+        # Handle successful payment
+        invoice = event['data']['object']
+        customer_id = invoice.get('customer')
+        subscription_id = invoice.get('subscription')
+        
+        if customer_id and subscription_id:
+            # Generate license key for annual subscription
+            license_key = gerar_chave(dias=365)
+            
+            conn = sqlite3.connect(DB_FILE)
+            c = conn.cursor()
+            c.execute('UPDATE customers SET license_key = ?, subscription_status = ? WHERE stripe_customer_id = ?',
+                      (license_key, 'active', customer_id))
+            conn.commit()
+            conn.close()
+    
     elif event['type'] == 'invoice.payment_failed':
         # Handle failed payment
         invoice = event['data']['object']
@@ -618,7 +656,8 @@ def webhook():
         conn.commit()
         conn.close()
     
-    return jsonify(success=True)
+    # Always return 200 to acknowledge receipt
+    return jsonify(success=True), 200
 
 @app.route('/receber-ebook', methods=['POST'])
 def receber_ebook():
