@@ -538,15 +538,19 @@ def success():
     session_id = request.args.get('session_id')
     
     try:
+        log_debug(f"success() called with session_id: {session_id}")
         # Configure Stripe API key (lazy loading)
         configure_stripe()
         
         session = stripe.checkout.Session.retrieve(session_id)
         customer_email = session.customer_details.email
         subscription_id = session.subscription
+        log_debug(f"Retrieved session for email: {customer_email}")
         
         # Update customer in database
+        log_debug(f"Calling update_subscription for {customer_email}")
         update_subscription(customer_email, session.customer, subscription_id, 'active')
+        log_debug(f"update_subscription completed")
         
         # Get license key with retry logic (webhook may not have processed yet)
         license_key = ''
@@ -554,7 +558,9 @@ def success():
             customer = get_customer(customer_email)
             if customer and customer[2]:
                 license_key = customer[2]
+                log_debug(f"Found license key on attempt {attempt}: {license_key}")
                 break
+            log_debug(f"Attempt {attempt}: customer not found or no key")
             if attempt < 4:  # Don't sleep on last attempt
                 time.sleep(1)
         
