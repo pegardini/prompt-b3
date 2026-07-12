@@ -87,10 +87,13 @@ def validate_license(chave):
         parts = chave.split('-')
         if len(parts) < 4:
             return False
-        vencimento = parts[2]
+        # Format: PROMPT-XXXXX-XXXXXXXX-YYYYMMDD-SUFIXO
+        # Index:  [0]     [1]     [2]        [3]       [4]
+        vencimento = parts[3]  # The date is at index 3, not 2
         expiry_date = datetime.strptime(vencimento, '%Y%m%d')
         return datetime.utcnow() < expiry_date
-    except:
+    except Exception as e:
+        log_debug(f"validate_license error for {chave}: {str(e)}")
         return False
 
 def get_customer(email):
