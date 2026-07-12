@@ -6,11 +6,18 @@ import json
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
-# Stripe configuration (use environment variables in production)
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+# Stripe configuration - lazy loading (read at request time, not at module load time)
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
 PRICE_MONTHLY = 'price_1Ts4DcBO1eUMFGitmiqEB8cW'
 PRICE_ANNUAL = 'price_1Ts4EnBO1eUMFGitr2bWqfvU'
+
+def configure_stripe():
+    """Configure Stripe API key from environment variables (lazy loading)"""
+    secret_key = os.environ.get('STRIPE_SECRET_KEY')
+    if not secret_key:
+        raise ValueError('STRIPE_SECRET_KEY not configured in environment variables')
+    stripe.api_key = secret_key
+    return secret_key
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_B3_v7.md')
@@ -376,6 +383,9 @@ def subscribe():
             return "Email é obrigatório", 400
         
         try:
+            # Configure Stripe API key (lazy loading)
+            configure_stripe()
+            
             # Create or get Stripe customer
             customer = stripe.Customer.create(email=email)
             
@@ -474,6 +484,9 @@ def success():
     session_id = request.args.get('session_id')
     
     try:
+        # Configure Stripe API key (lazy loading)
+        configure_stripe()
+        
         session = stripe.checkout.Session.retrieve(session_id)
         customer_email = session.customer_details.email
         subscription_id = session.subscription
@@ -549,6 +562,9 @@ def webhook():
     sig_header = request.headers.get('Stripe-Signature')
     
     try:
+        # Configure Stripe API key (lazy loading)
+        configure_stripe()
+        
         event = stripe.Webhook.construct_event(
             payload, sig_header, os.environ.get('STRIPE_WEBHOOK_SECRET', '')
         )
@@ -890,10 +906,6 @@ def checkout():
     plan = request.form.get('plan')
     email = request.form.get('email', 'customer@example.com')
     
-    # Debug: Check if Stripe API key is set
-    if not stripe.api_key:
-        return "Erro: Chave Stripe não configurada no servidor", 500
-    
     if plan == 'monthly':
         price_id = PRICE_MONTHLY
     elif plan == 'annual':
@@ -902,12 +914,8 @@ def checkout():
         return "Plano inválido", 400
     
     try:
-        # Verify price IDs are valid
-        if not price_id or price_id.startswith('price_'):
-            # Price ID format is correct, proceed
-            pass
-        else:
-            return f"Erro: ID de preço inválido: {price_id}", 500
+        # Configure Stripe API key (lazy loading)
+        configure_stripe()
         
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
@@ -921,8 +929,11 @@ def checkout():
             customer_email=email,
         )
         return redirect(session.url, code=303)
+    except ValueError as e:
+        # STRIPE_SECRET_KEY not configured
+        return f"Erro de configuração: {str(e)}", 500
     except stripe.error.AuthenticationError as e:
-        return f"Erro de autenticação Stripe: Chave API inválida ou não configurada. Detalhes: {str(e)}", 500
+        return f"Erro de autenticação Stripe: Chave API inválida. Detalhes: {str(e)}", 500
     except stripe.error.InvalidRequestError as e:
         return f"Erro na requisição Stripe: {str(e)}", 500
     except Exception as e:
