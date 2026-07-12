@@ -1,4 +1,4 @@
-import io, os, random, secrets, string, sqlite3, stripe
+import io, os, random, secrets, string, sqlite3, stripe, time
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, redirect, url_for
 import json
@@ -494,9 +494,15 @@ def success():
         # Update customer in database
         update_subscription(customer_email, session.customer, subscription_id, 'active')
         
-        # Get license key
-        customer = get_customer(customer_email)
-        license_key = customer[2] if customer else ''
+        # Get license key with retry logic (webhook may not have processed yet)
+        license_key = ''
+        for attempt in range(5):
+            customer = get_customer(customer_email)
+            if customer and customer[2]:
+                license_key = customer[2]
+                break
+            if attempt < 4:  # Don't sleep on last attempt
+                time.sleep(1)
         
         html = f"""
         <!DOCTYPE html>
@@ -521,7 +527,7 @@ def success():
                 
                 <div class="card">
                     <h3>🔑 Sua Chave de Licença (Anual):</h3>
-                    <p style="font-family: monospace; background: #1a2332; padding: 15px; border-radius: 8px; word-break: break-all; font-size: 1.1em;">{license_key}</p>
+                    <p id="license-key-display" style="font-family: monospace; background: #1a2332; padding: 15px; border-radius: 8px; word-break: break-all; font-size: 1.1em;">{license_key if license_key else '⏳ Carregando sua chave...'}</p>
                     <p style="margin-top: 10px; color: #ffd700;">Válida por 1 ano a partir de hoje</p>
                 </div>
                 
@@ -549,12 +555,51 @@ def success():
                 <a href="/" class="btn btn-gold" style="margin-top: 20px; padding: 14px 40px; font-size: 1.1em;">Voltar para Home</a>
             </div>
             {FOOTER}
+            <script>
+                // Auto-refresh license key if not loaded
+                function loadLicenseKey() {{
+                    const keyDisplay = document.getElementById('license-key-display');
+                    if (keyDisplay && keyDisplay.textContent.includes('Carregando')) {{
+                        fetch('/api/get-license-key?email={customer_email}')
+                            .then(response => response.json())
+                            .then(data => {{
+                                if (data.license_key) {{
+                                    keyDisplay.textContent = data.license_key;
+                                }} else {{
+                                    setTimeout(loadLicenseKey, 2000);
+                                }}
+                            }})
+                            .catch(error => {{
+                                console.error('Erro ao carregar chave:', error);
+                                setTimeout(loadLicenseKey, 2000);
+                            }});
+                    }}
+                }}
+                // Start checking after 1 second
+                setTimeout(loadLicenseKey, 1000);
+            </script>
         </body>
         </html>
         """
         return html
     except Exception as e:
         return f"Erro ao processar pagamento: {str(e)}", 500
+
+@app.route('/api/get-license-key')
+def get_license_key():
+    """API endpoint to get license key for a customer (used by JavaScript auto-refresh)"""
+    email = request.args.get('email')
+    if not email:
+        return jsonify({'error': 'Email required'}), 400
+    
+    try:
+        customer = get_customer(email)
+        if customer and customer[2]:  # customer[2] is license_key
+            return jsonify({'license_key': customer[2]})
+        else:
+            return jsonify({'license_key': None})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
