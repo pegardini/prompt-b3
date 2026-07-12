@@ -745,11 +745,12 @@ def validate_key():
             if customer_data.get('license_key') == key:
                 log_debug(f"Found matching customer: {email}")
                 # Validate expiry date from key
+                log_debug(f"About to validate key: {key}")
                 is_valid = validate_license(key)
                 log_debug(f"validate_license returned: {is_valid}")
                 
                 if not is_valid:
-                    log_debug(f"Key is invalid/expired")
+                    log_debug(f"Key is invalid/expired: {key}")
                     return jsonify({
                         'valid': False,
                         'error': 'Chave expirada',
