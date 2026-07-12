@@ -685,13 +685,20 @@ def validate_key():
         return jsonify({'valid': False, 'error': 'Chave não fornecida'}), 400
     
     try:
+        log_debug(f"validate_key called with key: {key}")
         customers = load_customers()
+        log_debug(f"Found {len(customers)} customers in database")
         
         # Find customer with this license key
         for email, customer_data in customers.items():
             if customer_data.get('license_key') == key:
+                log_debug(f"Found matching customer: {email}")
                 # Validate expiry date from key
-                if not validate_license(key):
+                is_valid = validate_license(key)
+                log_debug(f"validate_license returned: {is_valid}")
+                
+                if not is_valid:
+                    log_debug(f"Key is invalid/expired")
                     return jsonify({
                         'valid': False,
                         'error': 'Chave expirada',
@@ -700,6 +707,7 @@ def validate_key():
                 
                 # Check subscription status
                 if customer_data.get('subscription_status') != 'active':
+                    log_debug(f"Subscription not active: {customer_data.get('subscription_status')}")
                     return jsonify({
                         'valid': False,
                         'error': 'Assinatura não está ativa',
@@ -708,15 +716,17 @@ def validate_key():
                     })
                 
                 # Key is valid
+                log_debug(f"Key is VALID for {email}")
                 return jsonify({
                     'valid': True,
                     'email': email,
-                    'expires': customer_data.get('license_key', '').split('-')[2] if '-' in customer_data.get('license_key', '') else 'N/A',
+                    'expires': customer_data.get('license_key', '').split('-')[3] if '-' in customer_data.get('license_key', '') else 'N/A',
                     'status': 'active',
                     'plan': 'annual' if '1ANO' in key else 'monthly'
                 })
         
         # Key not found
+        log_debug(f"Key not found in database")
         return jsonify({
             'valid': False,
             'error': 'Chave não encontrada no sistema'
