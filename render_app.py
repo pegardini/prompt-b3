@@ -2399,8 +2399,8 @@ def comprar():
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 0 auto;">
                 <!-- Plano Mensal -->
-                <div class="card card-destaque" style="text-align: center; border: 2px solid rgba(255,215,0,0.3);">
-                    <h2 style="color: #ffd700; margin-bottom: 10px;">Mensal</h2>
+                <div class="card card-destaque" style="text-align: center; border: 2px solid rgba(255,215,0,0.3); position: relative;">
+                    <h2 style="color: #ffd700; margin-bottom: 10px; margin-top: 10px;">Mensal</h2>
                     <h1 style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 25<span style="font-size: 0.6em;">/mês</span></h1>
                     <p style="color: #999; margin-bottom: 30px;">Cancele a qualquer momento</p>
                     
