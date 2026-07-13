@@ -319,6 +319,7 @@ NAV = """
         <a href="/trial">Teste 7 Dias</a>
         <a href="/comprar">Comprar 1 Ano</a>
         <a href="/relatorio">Relatório Visual</a>
+        <a href="/minha-conta" style="color: #ffd700; font-weight: bold;">👤 Minha Conta</a>
         <a href="/contato">Contato</a>
     </div>
 </nav>
@@ -504,6 +505,11 @@ def trial():
                         <li>Peça análise de uma ação (ex: "Analise PETR4")</li>
                         <li>Copie a resposta e vá em "Relatório Visual" para gerar gráficos</li>
                     </ol>
+                </div>
+                <div class="card" style="background: rgba(0,200,83,0.08); border: 2px solid rgba(0,200,83,0.3);">
+                    <h3>👤 Acesse Sua Conta a Qualquer Momento</h3>
+                    <p>Você pode acessar sua chave, baixar o prompt atualizado e renovar sua assinatura em:</p>
+                    <a href="/minha-conta?email={email}" class="btn btn-gold" style="margin-top: 15px; display: inline-block; text-decoration: none;">👤 Acessar Minha Conta</a>
                 </div>
                 <div class="card" style="background: rgba(255,215,0,0.08); border: 2px solid rgba(255,215,0,0.3);">
                     <h3>💳 Quer Acesso Permanente?</h3>
