@@ -28,8 +28,9 @@ def configure_stripe():
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_B3_v7.md')
 EBOOK_FILE = os.path.join(BASE_DIR, 'static', 'ebook_prompt_b3.pdf')
-DB_FILE = '/tmp/customers.json'
+DB_FILE = '/tmp/customers.json'  # fallback only
 LOG_FILE = '/tmp/app_debug.log'
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'promptpegardini@gmail.com')
 APP_URL = os.environ.get('APP_URL', 'https://prompt-b3-ndes.onrender.com')
@@ -63,17 +64,85 @@ def send_email(to_email, subject, html_content):
         log_debug(f"Error sending email to {to_email}: {str(e)}")
         return False
 
-# Initialize database (JSON-based)
+# ── Database layer: PostgreSQL (Neon) with JSON fallback ──────────────────────
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    PSYCOPG2_AVAILABLE = True
+except ImportError:
+    PSYCOPG2_AVAILABLE = False
+
+def get_pg_conn():
+    """Return a new PostgreSQL connection or None if unavailable"""
+    if not PSYCOPG2_AVAILABLE or not DATABASE_URL:
+        return None
+    try:
+        return psycopg2.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        log_debug(f"PG connect error: {str(e)}")
+        return None
+
 def init_db():
-    """Initialize JSON database if it doesn't exist"""
-    if not os.path.exists(DB_FILE):
-        with open(DB_FILE, 'w') as f:
-            json.dump({}, f)
+    """Create tables in PostgreSQL; fall back to JSON file"""
+    conn = get_pg_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS customers (
+                        id SERIAL PRIMARY KEY,
+                        email TEXT UNIQUE NOT NULL,
+                        license_key TEXT,
+                        trial_expiry TEXT,
+                        stripe_customer_id TEXT,
+                        subscription_id TEXT,
+                        subscription_status TEXT,
+                        plan TEXT,
+                        key_issued_at TEXT,
+                        key_history JSONB DEFAULT '[]',
+                        created_at TEXT
+                    );
+                    CREATE TABLE IF NOT EXISTS leads (
+                        id SERIAL PRIMARY KEY,
+                        email TEXT NOT NULL,
+                        question TEXT,
+                        variant TEXT,
+                        downloaded_ebook BOOLEAN DEFAULT FALSE,
+                        converted BOOLEAN DEFAULT FALSE,
+                        created_at TEXT
+                    );
+                """)
+            conn.commit()
+            log_debug("PostgreSQL tables initialized")
+        except Exception as e:
+            log_debug(f"PG init_db error: {str(e)}")
+        finally:
+            conn.close()
+    else:
+        # JSON fallback
+        if not os.path.exists(DB_FILE):
+            with open(DB_FILE, 'w') as f:
+                json.dump({}, f)
 
 init_db()
 
 def load_customers():
-    """Load all customers from JSON file"""
+    """Load all customers — PostgreSQL first, JSON fallback"""
+    conn = get_pg_conn()
+    if conn:
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT * FROM customers")
+                rows = cur.fetchall()
+            result = {}
+            for row in rows:
+                result[row['email']] = dict(row)
+            return result
+        except Exception as e:
+            log_debug(f"PG load_customers error: {str(e)}")
+        finally:
+            conn.close()
+    # JSON fallback
     try:
         if os.path.exists(DB_FILE):
             with open(DB_FILE, 'r') as f:
@@ -83,11 +152,51 @@ def load_customers():
     return {}
 
 def save_customers(data):
-    """Save customers to JSON file"""
+    """Upsert all customers — PostgreSQL first, JSON fallback"""
+    conn = get_pg_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                for email, c in data.items():
+                    cur.execute("""
+                        INSERT INTO customers
+                            (email, license_key, trial_expiry, stripe_customer_id,
+                             subscription_id, subscription_status, plan,
+                             key_issued_at, key_history, created_at)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                        ON CONFLICT (email) DO UPDATE SET
+                            license_key          = EXCLUDED.license_key,
+                            trial_expiry         = EXCLUDED.trial_expiry,
+                            stripe_customer_id   = EXCLUDED.stripe_customer_id,
+                            subscription_id      = EXCLUDED.subscription_id,
+                            subscription_status  = EXCLUDED.subscription_status,
+                            plan                 = EXCLUDED.plan,
+                            key_issued_at        = EXCLUDED.key_issued_at,
+                            key_history          = EXCLUDED.key_history
+                    """, (
+                        email,
+                        c.get('license_key'),
+                        c.get('trial_expiry'),
+                        c.get('stripe_customer_id'),
+                        c.get('subscription_id'),
+                        c.get('subscription_status'),
+                        c.get('plan'),
+                        c.get('key_issued_at'),
+                        json.dumps(c.get('key_history', [])),
+                        c.get('created_at')
+                    ))
+            conn.commit()
+            log_debug(f"PG: saved {len(data)} customers")
+            return
+        except Exception as e:
+            log_debug(f"PG save_customers error: {str(e)}")
+        finally:
+            conn.close()
+    # JSON fallback
     try:
         with open(DB_FILE, 'w') as f:
             json.dump(data, f, indent=2)
-        log_debug(f"Saved {len(data)} customers to database")
+        log_debug(f"JSON fallback: saved {len(data)} customers")
     except Exception as e:
         log_debug(f"ERROR saving customers: {str(e)}")
         raise
