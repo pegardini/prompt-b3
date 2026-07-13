@@ -1327,6 +1327,17 @@ def admin_dashboard():
         leads_converted = sum(1 for c in customers.values() if c.get('is_lead') and c.get('subscription_status') == 'active')
         conversion_rate = (leads_converted / total_leads * 100) if total_leads > 0 else 0
         
+        # A/B Testing metrics
+        variant_a_leads = sum(1 for c in customers.values() if c.get('ab_variant') == 'A')
+        variant_b_leads = sum(1 for c in customers.values() if c.get('ab_variant') == 'B')
+        variant_c_leads = sum(1 for c in customers.values() if c.get('ab_variant') == 'C')
+        variant_a_converted = sum(1 for c in customers.values() if c.get('ab_variant') == 'A' and c.get('subscription_status') == 'active')
+        variant_b_converted = sum(1 for c in customers.values() if c.get('ab_variant') == 'B' and c.get('subscription_status') == 'active')
+        variant_c_converted = sum(1 for c in customers.values() if c.get('ab_variant') == 'C' and c.get('subscription_status') == 'active')
+        variant_a_rate = (variant_a_converted / variant_a_leads * 100) if variant_a_leads > 0 else 0
+        variant_b_rate = (variant_b_converted / variant_b_leads * 100) if variant_b_leads > 0 else 0
+        variant_c_rate = (variant_c_converted / variant_c_leads * 100) if variant_c_leads > 0 else 0
+        
         # Calculate total revenue (estimate)
         total_revenue = 0
         for customer in customers.values():
@@ -1420,6 +1431,40 @@ def admin_dashboard():
                 </div>
                 
                 <div class="table-container">
+                    <h2>🎯 A/B Testing Results</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Variante</th>
+                                <th>Leads Capturados</th>
+                                <th>Convertidos</th>
+                                <th>Taxa de Conversão</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);"><strong>Variante A</strong> (📋 Guia)</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{variant_a_leads}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{variant_a_converted}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);"><strong style="color: #fbbf24;">{variant_a_rate:.1f}%</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);"><strong>Variante B</strong> (💡 IA)</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{variant_b_leads}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{variant_b_converted}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);"><strong style="color: #fbbf24;">{variant_b_rate:.1f}%</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);"><strong>Variante C</strong> (📊 Mudar)</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{variant_c_leads}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{variant_c_converted}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);"><strong style="color: #fbbf24;">{variant_c_rate:.1f}%</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-container">
                     <h2>📋 Lista de Clientes</h2>
                     <table>
                         <thead>
@@ -1449,7 +1494,36 @@ def admin_dashboard():
 
 @app.route('/lead-magnet')
 def lead_magnet():
-    """Lead magnet page - capture emails with free ebook"""
+    """Lead magnet page with A/B testing variants"""
+    # Get A/B test variant from query parameter (default: A)
+    variant = request.args.get('variant', 'A').upper()
+    if variant not in ['A', 'B', 'C']:
+        variant = 'A'
+    
+    # Define variant-specific copy
+    variants = {
+        'A': {
+            'title': '📋 Guia Introdutório Exclusivo',
+            'subtitle': 'Aprenda os fundamentos do <strong>Método Barsi e Finclass</strong> em <strong>10 páginas</strong> práticas e diretas.',
+            'highlight': '✨ Preencha seus dados abaixo e receba o ebook + atualizações sobre novas versões do prompt.',
+            'button': '📥 Receber Ebook Grátis'
+        },
+        'B': {
+            'title': '💡 Domine Análise de Ações com IA',
+            'subtitle': 'Descubra como usar <strong>IA + Método Barsi</strong> para análises profissionais em minutos.',
+            'highlight': '🌟 Receba o ebook + acesso a dicas exclusivas de investimento.',
+            'button': '🌟 Quero Aprender Agora'
+        },
+        'C': {
+            'title': '📊 10 Páginas que Mudam Sua Forma de Investir',
+            'subtitle': '<strong>Sem Jargão Técnico.</strong> Apenas estratégias práticas que funcionam.',
+            'highlight': '🚀 Receba o ebook + desconto especial de 50% no primeiro mês.',
+            'button': '🎉 Receber Ebook + Desconto'
+        }
+    }
+    
+    copy = variants[variant]
+    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -1474,6 +1548,7 @@ def lead_magnet():
             .form-group textarea {{ resize: vertical; min-height: 100px; }}
             .btn {{ width: 100%; padding: 14px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; font-weight: bold; font-size: 1em; cursor: pointer; margin-top: 10px; }}
             .btn:hover {{ background: #ffed4e; }}
+            .variant-badge {{ display: inline-block; background: rgba(255,215,0,0.2); color: #ffd700; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; margin-bottom: 15px; }}
             @media (max-width: 768px) {{
                 .container {{ grid-template-columns: 1fr; gap: 30px; }}
                 .form-section {{ padding: 30px; }}
@@ -1487,14 +1562,17 @@ def lead_magnet():
             </div>
             
             <div class="form-section">
-                <h2>📋 Guia Introdutório Exclusivo</h2>
-                <p>Aprenda os fundamentos do <strong>Método Barsi e Finclass</strong> em <strong>10 páginas</strong> práticas e diretas.</p>
+                <div class="variant-badge">Variante {variant}</div>
+                <h2>{copy['title']}</h2>
+                <p>{copy['subtitle']}</p>
                 
                 <div style="background: rgba(255,215,0,0.1); padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0; border-radius: 8px;">
-                    <p style="color: #ffd700; font-weight: bold;">✨ Preencha seus dados abaixo e receba o ebook + atualizações sobre novas versões do prompt.</p>
+                    <p style="color: #ffd700; font-weight: bold;">{copy['highlight']}</p>
                 </div>
                 
                 <form method="POST" action="/submit-lead">
+                    <input type="hidden" name="ab_variant" value="{variant}">
+                    
                     <div class="form-group">
                         <label for="email">📧 Seu Email</label>
                         <input type="email" id="email" name="email" placeholder="seu@email.com" required>
@@ -1505,7 +1583,7 @@ def lead_magnet():
                         <textarea id="question" name="question" placeholder="Compartilhe sua dúvida ou interesse..."></textarea>
                     </div>
                     
-                    <button type="submit" class="btn">📥 Receber Ebook Grátis</button>
+                    <button type="submit" class="btn">{copy['button']}</button>
                 </form>
                 
                 <p style="color: #666; font-size: 0.85em; margin-top: 20px; text-align: center;">
@@ -1542,6 +1620,7 @@ def submit_lead():
         customers[email]['utm_source'] = request.args.get('utm_source', 'organic')
         customers[email]['utm_medium'] = request.args.get('utm_medium', 'direct')
         customers[email]['utm_campaign'] = request.args.get('utm_campaign', 'lead_magnet')
+        customers[email]['ab_variant'] = request.form.get('ab_variant', 'A')
         save_customers(customers)
         
         # Send ebook by email
