@@ -1639,65 +1639,103 @@ def lead_magnet():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ebook Gratuito - Prompt B3</title>
+        <title>Ebook Gratuito - Análise Fundamentalista com IA</title>
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }}
-            .container {{ display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; width: 100%; }}
-            .ebook-image {{ display: flex; align-items: center; justify-content: center; }}
-            .ebook-image img {{ max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 10px 40px rgba(255,215,0,0.2); }}
-            .form-section {{ background: #1a2332; border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 40px; }}
-            .form-section h2 {{ color: #ffd700; font-size: 1.8em; margin-bottom: 10px; }}
-            .form-section p {{ color: #aaa; margin-bottom: 20px; font-size: 0.95em; line-height: 1.6; }}
-            .highlight {{ color: #ffd700; font-weight: bold; }}
-            .form-group {{ margin-bottom: 20px; }}
-            .form-group label {{ display: block; color: #ffd700; font-weight: bold; margin-bottom: 8px; }}
-            .form-group input, .form-group textarea {{ width: 100%; padding: 12px; background: #0a0f1e; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff; font-family: inherit; }}
-            .form-group input::placeholder, .form-group textarea::placeholder {{ color: #666; }}
-            .form-group textarea {{ resize: vertical; min-height: 100px; }}
-            .btn {{ width: 100%; padding: 14px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; font-weight: bold; font-size: 1em; cursor: pointer; margin-top: 10px; }}
-            .btn:hover {{ background: #ffed4e; }}
-            .variant-badge {{ display: inline-block; background: rgba(255,215,0,0.2); color: #ffd700; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; margin-bottom: 15px; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0f1e 0%, #0d1b2a 100%); color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }}
+            .top-bar {{ width: 100%; max-width: 1200px; background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; padding: 10px 20px; margin-bottom: 30px; text-align: center; color: #ffd700; font-size: 0.9em; }}
+            .container {{ display: grid; grid-template-columns: 1fr 1fr; gap: 50px; max-width: 1200px; width: 100%; }}
+            .ebook-side {{ display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }}
+            .ebook-side img {{ max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 20px 60px rgba(255,215,0,0.3); transform: perspective(800px) rotateY(-5deg); transition: transform 0.3s; }}
+            .ebook-side img:hover {{ transform: perspective(800px) rotateY(0deg); }}
+            .social-proof {{ display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }}
+            .proof-item {{ background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.2); border-radius: 8px; padding: 10px 15px; text-align: center; }}
+            .proof-item .number {{ color: #ffd700; font-size: 1.4em; font-weight: bold; }}
+            .proof-item .label {{ color: #aaa; font-size: 0.75em; }}
+            .form-section {{ background: #1a2332; border: 2px solid rgba(255,215,0,0.4); border-radius: 16px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }}
+            .form-section h2 {{ color: #ffd700; font-size: 1.8em; margin-bottom: 10px; line-height: 1.3; }}
+            .form-section p {{ color: #bbb; margin-bottom: 20px; font-size: 0.95em; line-height: 1.6; }}
+            .benefits {{ list-style: none; margin: 15px 0 20px 0; }}
+            .benefits li {{ color: #ccc; padding: 6px 0; font-size: 0.9em; }}
+            .benefits li::before {{ content: '✅ '; }}
+            .highlight-box {{ background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,165,0,0.1)); padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0; border-radius: 0 8px 8px 0; }}
+            .form-group {{ margin-bottom: 18px; }}
+            .form-group label {{ display: block; color: #ffd700; font-weight: bold; margin-bottom: 8px; font-size: 0.9em; }}
+            .form-group input {{ width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff; font-family: inherit; font-size: 1em; transition: border-color 0.2s; }}
+            .form-group input:focus {{ outline: none; border-color: #ffd700; background: rgba(255,215,0,0.05); }}
+            .form-group input::placeholder {{ color: #555; }}
+            .btn-submit {{ width: 100%; padding: 16px; background: linear-gradient(135deg, #ffd700, #ffb300); color: #0a0f1e; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1em; cursor: pointer; margin-top: 10px; transition: all 0.2s; letter-spacing: 0.5px; }}
+            .btn-submit:hover {{ background: linear-gradient(135deg, #ffed4e, #ffd700); transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255,215,0,0.4); }}
+            .trust-badges {{ display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }}
+            .trust-badge {{ color: #666; font-size: 0.8em; display: flex; align-items: center; gap: 4px; }}
             @media (max-width: 768px) {{
                 .container {{ grid-template-columns: 1fr; gap: 30px; }}
-                .form-section {{ padding: 30px; }}
+                .form-section {{ padding: 25px; }}
+                .ebook-side img {{ max-width: 280px; transform: none; }}
             }}
         </style>
     </head>
     <body>
+        <div class="top-bar">
+            🔥 <strong>+2.847 investidores</strong> já baixaram este guia gratuito
+        </div>
+        
         <div class="container">
-            <div class="ebook-image">
-                <img src="/static/ebook_cover.webp" alt="Capa do Ebook Prompt B3">
+            <div class="ebook-side">
+                <img src="/static/ebook_cover.webp" alt="Capa do Ebook Análise Fundamentalista com IA">
+                
+                <div class="social-proof">
+                    <div class="proof-item">
+                        <div class="number">10</div>
+                        <div class="label">Páginas</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="number">2</div>
+                        <div class="label">Análises</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="number">100%</div>
+                        <div class="label">Gratuito</div>
+                    </div>
+                    <div class="proof-item">
+                        <div class="number">⚡</div>
+                        <div class="label">Instantâneo</div>
+                    </div>
+                </div>
             </div>
             
             <div class="form-section">
-                <div class="variant-badge">Variante {variant}</div>
                 <h2>{copy['title']}</h2>
                 <p>{copy['subtitle']}</p>
                 
-                <div style="background: rgba(255,215,0,0.1); padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0; border-radius: 8px;">
-                    <p style="color: #ffd700; font-weight: bold;">{copy['highlight']}</p>
+                <ul class="benefits">
+                    <li>Análise com Foco em Dividendos explicada</li>
+                    <li>Análise com Foco em Qualidade explicada</li>
+                    <li>Como usar IA para analisar ações</li>
+                    <li>Filtros e critérios práticos</li>
+                </ul>
+                
+                <div class="highlight-box">
+                    <p style="color: #ffd700; font-weight: bold; font-size: 0.95em;">{copy['highlight']}</p>
                 </div>
                 
                 <form method="POST" action="/submit-lead">
                     <input type="hidden" name="ab_variant" value="{variant}">
                     
                     <div class="form-group">
-                        <label for="email">📧 Seu Email</label>
+                        <label for="email">📧 Seu melhor email</label>
                         <input type="email" id="email" name="email" placeholder="seu@email.com" required>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="question">❓ Tem alguma dúvida? (Opcional)</label>
-                        <textarea id="question" name="question" placeholder="Compartilhe sua dúvida ou interesse..."></textarea>
-                    </div>
-                    
-                    <button type="submit" class="btn">{copy['button']}</button>
+                    <button type="submit" class="btn-submit">{copy['button']}</button>
                 </form>
                 
-                <p style="color: #666; font-size: 0.85em; margin-top: 20px; text-align: center;">
-                    ✅ Sem spam. Você receberá apenas atualizações importantes.
-                </p>
+                <div class="trust-badges">
+                    <span class="trust-badge">🔒 100% Seguro</span>
+                    <span class="trust-badge">🚧 Sem spam</span>
+                    <span class="trust-badge">⚡ Entrega imediata</span>
+                    <span class="trust-badge">📚 PDF gratuito</span>
+                </div>
             </div>
         </div>
     </body>
