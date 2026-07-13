@@ -367,7 +367,10 @@ def home():
 
             <h2 style="text-align: center; margin-bottom: 30px;">🎬 Veja Como Funciona</h2>
             <div style="margin: 30px 0; text-align: center;">
-                <iframe width="100%" height="400" style="max-width: 600px; border-radius: 12px;" src="https://www.youtube.com/embed/ZljR8zJzu4Q" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                <video width="100%" height="400" style="max-width: 700px; border-radius: 12px; box-shadow: 0 10px 40px rgba(255,215,0,0.2);" controls poster="/static/ebook_cover.webp">
+                    <source src="/static/video_demo_final.mp4" type="video/mp4">
+                    Seu navegador não suporta vídeo HTML5.
+                </video>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 40px 0;">
