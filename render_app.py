@@ -2,6 +2,12 @@ import io, os, random, secrets, string, sqlite3, stripe, time
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, redirect, url_for
 import json
+try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+    SENDGRID_AVAILABLE = True
+except ImportError:
+    SENDGRID_AVAILABLE = False
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
@@ -22,8 +28,11 @@ def configure_stripe():
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_B3_v7.md')
 EBOOK_FILE = os.path.join(BASE_DIR, 'static', 'ebook_prompt_b3.pdf')
-DB_FILE = '/tmp/customers.json'  # Use JSON file instead of SQLite
-LOG_FILE = '/tmp/app_debug.log'  # Debug log file
+DB_FILE = '/tmp/customers.json'
+LOG_FILE = '/tmp/app_debug.log'
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'promptpegardini@gmail.com')
+APP_URL = os.environ.get('APP_URL', 'https://prompt-b3-ndes.onrender.com')
 
 def log_debug(message):
     """Write debug message to log file"""
@@ -32,6 +41,27 @@ def log_debug(message):
             f.write(f"[{datetime.utcnow().isoformat()}] {message}\n")
     except:
         pass
+
+def send_email(to_email, subject, html_content):
+    """Send email using SendGrid"""
+    if not SENDGRID_AVAILABLE or not SENDGRID_API_KEY:
+        log_debug(f"SendGrid not available, skipping email to {to_email}")
+        return False
+    
+    try:
+        message = Mail(
+            from_email=SENDER_EMAIL,
+            to_emails=to_email,
+            subject=subject,
+            html_content=html_content
+        )
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        log_debug(f"Email sent to {to_email}: {response.status_code}")
+        return True
+    except Exception as e:
+        log_debug(f"Error sending email to {to_email}: {str(e)}")
+        return False
 
 # Initialize database (JSON-based)
 def init_db():
@@ -133,10 +163,19 @@ def update_subscription(email, stripe_customer_id, subscription_id, status):
         
         if email in customers:
             log_debug(f"Updating existing customer: {email}")
+            if 'key_history' not in customers[email]:
+                customers[email]['key_history'] = []
+            if customers[email].get('license_key'):
+                customers[email]['key_history'].append({
+                    'key': customers[email]['license_key'],
+                    'issued_at': customers[email].get('key_issued_at', customers[email].get('created_at')),
+                    'status': 'replaced'
+                })
             customers[email]['stripe_customer_id'] = stripe_customer_id
             customers[email]['subscription_id'] = subscription_id
             customers[email]['subscription_status'] = status
             customers[email]['license_key'] = license_key
+            customers[email]['key_issued_at'] = datetime.utcnow().isoformat()
             customers[email]['trial_expiry'] = None
         else:
             log_debug(f"Creating new customer: {email}")
@@ -144,6 +183,8 @@ def update_subscription(email, stripe_customer_id, subscription_id, status):
                 'id': len(customers) + 1,
                 'email': email,
                 'license_key': license_key,
+                'key_issued_at': datetime.utcnow().isoformat(),
+                'key_history': [],
                 'trial_expiry': None,
                 'stripe_customer_id': stripe_customer_id,
                 'subscription_id': subscription_id,
@@ -153,9 +194,95 @@ def update_subscription(email, stripe_customer_id, subscription_id, status):
         
         save_customers(customers)
         log_debug(f"Successfully saved customer: {email}")
+        
+        # Send welcome email with license key
+        send_license_email(email, license_key)
     except Exception as e:
         log_debug(f"ERROR in update_subscription: {str(e)}")
         raise
+
+def send_license_email(email, license_key):
+    """Send license key email to customer with prompt attachment"""
+    subject = "🔑 Sua Chave de Licença + Prompt B3"
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #ffd700; text-align: center;">🎉 Bem-vindo ao Prompt B3!</h2>
+            
+            <p style="color: #333; font-size: 16px;">Olá,</p>
+            
+            <p style="color: #333; font-size: 16px;">Obrigado por sua compra! Sua assinatura foi ativada com sucesso.</p>
+            
+            <div style="background-color: #0a0f1e; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700;">
+                <p style="color: #ffd700; font-size: 14px; margin: 0; text-align: center;">Sua Chave de Licença:</p>
+                <p style="color: #ffffff; font-size: 18px; font-weight: bold; margin: 10px 0; text-align: center; font-family: monospace;">{license_key}</p>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">📝 Próximos Passos:</h3>
+            <ol style="color: #333; font-size: 15px; line-height: 1.8;">
+                <li><strong>Baixe o arquivo em anexo:</strong> PROMPT_MESTRE_HIBRIDO_B3_v7.md</li>
+                <li>Abra ChatGPT, Claude ou Gemini</li>
+                <li>Cole o conteúdo do arquivo no chat</li>
+                <li>Cole sua chave de licença quando solicitado</li>
+                <li>Comece a analisar ações com o Método Barsi + Finclass</li>
+            </ol>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0;">
+                <p style="color: #666; font-size: 14px; margin: 0;"><strong>💡 Dica:</strong> Guarde sua chave em um lugar seguro. Você precisará dela para usar o prompt.</p>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">❓ Dúvidas?</h3>
+            <p style="color: #666; font-size: 14px;">Entre em contato conosco em <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700; text-decoration: none;">promptpegardini@gmail.com</a></p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+        </div>
+    </body>
+    </html>
+    """
+    send_email_with_attachment(email, subject, html_content, PROMPT_FILE)
+
+def send_email_with_attachment(to_email, subject, html_content, attachment_path):
+    """Send email with file attachment using SendGrid"""
+    if not SENDGRID_AVAILABLE or not SENDGRID_API_KEY:
+        log_debug(f"SendGrid not available, skipping email to {to_email}")
+        return False
+    
+    try:
+        from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+        import base64
+        
+        message = Mail(
+            from_email=SENDER_EMAIL,
+            to_emails=to_email,
+            subject=subject,
+            html_content=html_content
+        )
+        
+        # Attach file if it exists
+        if attachment_path and os.path.exists(attachment_path):
+            with open(attachment_path, 'rb') as f:
+                file_data = f.read()
+                file_b64 = base64.b64encode(file_data).decode()
+            
+            file_name = os.path.basename(attachment_path)
+            attachment = Attachment(
+                FileContent(file_b64),
+                FileName(file_name),
+                FileType('text/markdown' if file_name.endswith('.md') else 'application/octet-stream'),
+                Disposition('attachment')
+            )
+            message.attachment = attachment
+        
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        log_debug(f"Email sent to {to_email} with status {response.status_code}")
+        return True
+    except Exception as e:
+        log_debug(f"Error sending email to {to_email}: {str(e)}")
+        return False
 
 CSS = """
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -207,116 +334,8 @@ FOOTER = """
 
 @app.route('/')
 def home():
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Prompt Fundamentalista B3</title>
-        <style>{CSS}</style>
-    </head>
-    <body>
-        {NAV}
-        <div class="container">
-            <h1>📈 Prompt Fundamentalista B3</h1>
-            <div class="card" style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3); margin-bottom: 30px;">
-                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este é um projeto <strong>não oficial</strong>, não autorizado ou endossado por Luiz Barsi ou Finclass.
-            </div>
-            
-            <div class="card card-destaque" style="text-align: center; padding: 50px 30px; margin-bottom: 40px;">
-                <p style="font-size: 1.3em; margin-bottom: 15px; color: #ffd700; font-weight: bold;">Análise Inteligente de Ações B3 com IA</p>
-                <p style="font-size: 1.1em; margin-bottom: 30px; color: #ccc;">Método Fundamentalista Barsi + Finclass | Funciona com ChatGPT, Claude e Gemini</p>
-                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                    <a href="/trial" class="btn btn-gold" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">📥 Teste 7 Dias Grátis</a>
-                    <a href="/subscribe" class="btn btn-green" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">💳 Assinar Agora</a>
-                </div>
-            </div>
-
-            <h2 style="text-align: center; margin-bottom: 30px;">🎬 Veja Como Funciona</h2>
-            <div style="margin: 30px 0; text-align: center;">
-                <iframe width="100%" height="400" style="max-width: 600px; border-radius: 12px;" src="https://www.youtube.com/embed/ZljR8zJzu4Q" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 40px 0;">
-                <div class="card" style="text-align: center;">
-                    <p style="font-size: 2em; margin-bottom: 10px;">✅</p>
-                    <h3>Prompt Pronto</h3>
-                    <p>Copie e cole em qualquer IA</p>
-                </div>
-                <div class="card" style="text-align: center;">
-                    <p style="font-size: 2em; margin-bottom: 10px;">📊</p>
-                    <h3>Análise Completa</h3>
-                    <p>Barsi + Finclass + Veredito</p>
-                </div>
-                <div class="card" style="text-align: center;">
-                    <p style="font-size: 2em; margin-bottom: 10px;">🎨</p>
-                    <h3>Relatório Visual</h3>
-                    <p>Gráficos coloridos e profissionais</p>
-                </div>
-                <div class="card" style="text-align: center;">
-                    <p style="font-size: 2em; margin-bottom: 10px;">🔑</p>
-                    <h3>Chave Única</h3>
-                    <p>Válida por 7 dias ou 1 ano</p>
-                </div>
-            </div>
-
-            <h2 style="text-align: center; margin: 60px 0 30px;">📈 Como Usar em 3 Passos</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px;">
-                <div class="card">
-                    <h3>1️⃣ Baixe o Prompt</h3>
-                    <p>Clique em "Teste 7 Dias" ou "Assinar Agora" e receba seu prompt com chave única</p>
-                </div>
-                <div class="card">
-                    <h3>2️⃣ Cole na IA</h3>
-                    <p>Abra ChatGPT, Claude ou Gemini. Cole o prompt e peça a análise de uma ação</p>
-                </div>
-                <div class="card">
-                    <h3>3️⃣ Veja o Relatório</h3>
-                    <p>Copie a resposta, vá em "Relatório Visual" e gere gráficos profissionais</p>
-                </div>
-            </div>
-
-            <h2 style="text-align: center; margin: 60px 0 30px;">❓ Dúvidas Frequentes</h2>
-            <div class="card">
-                <h3>📄 O que é um arquivo MD (Markdown)?</h3>
-                <p>Markdown é um formato de texto simples que pode ser convertido para HTML, PDF ou outros formatos. É muito usado em documentação técnica.</p>
-            </div>
-            <div class="card">
-                <h3>🔑 Como funciona a chave de licença?</h3>
-                <p>A chave é única e válida por 7 dias (trial) ou 1 ano (assinatura). Inclua a chave no prompt para que a IA reconheça sua licença.</p>
-            </div>
-            <div class="card">
-                <h3>🤖 Posso usar em qualquer IA?</h3>
-                <p>Sim! O prompt funciona com ChatGPT, Claude, Gemini e qualquer outra IA que aceite prompts de texto.</p>
-            </div>
-            <div class="card">
-                <h3>📊 Posso exportar o relatório em PDF?</h3>
-                <p>Sim! Na página "Relatório Visual", clique em "Imprimir / Salvar PDF" para gerar um PDF profissional.</p>
-            </div>
-
-            <h2 style="text-align: center; margin: 60px 0 30px;">📚 Ganhe um Ebook Gratuito</h2>
-            <div class="card card-destaque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center;">
-                <div style="text-align: center;">
-                    <img src="/static/ebook_cover.png" style="max-width: 100%; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);">
-                </div>
-                <div>
-                    <h3>📖 Guia Introdutório Exclusivo</h3>
-                    <p>Aprenda os fundamentos do Método Barsi e Finclass em 10 páginas práticas e diretas.</p>
-                    <p style="margin-top: 20px; color: #ffd700; font-weight: bold;">Preencha seus dados abaixo e receba o ebook + atualizações sobre novas versões do prompt.</p>
-                    <form action="/receber-ebook" method="POST" style="margin-top: 20px;">
-                        <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 12px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
-                        <textarea name="duvidas" placeholder="Tem alguma dúvida? (opcional)" style="width: 100%; height: 80px; padding: 12px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff; resize: vertical;"></textarea>
-                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px;">Receber Ebook Grátis</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {FOOTER}
-    </body>
-    </html>
-    """
-    return html
+    """Redirect to lead magnet landing page"""
+    return redirect('/lead-magnet')
 
 @app.route('/trial', methods=['GET', 'POST'])
 def trial():
@@ -660,79 +679,6 @@ def get_license_key():
             return jsonify({'license_key': None})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/api/debug-customers')
-def debug_customers():
-    """Debug endpoint - shows all customers in database (remove in production)"""
-    try:
-        customers = load_customers()
-        return jsonify(customers)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/debug-logs')
-def debug_logs():
-    """Debug endpoint - shows application logs"""
-    try:
-        if os.path.exists(LOG_FILE):
-            with open(LOG_FILE, 'r') as f:
-                logs = f.read()
-            return f"<pre>{logs}</pre>", 200, {'Content-Type': 'text/html'}
-        else:
-            return "No logs yet", 200
-    except Exception as e:
-        return f"Error reading logs: {str(e)}", 500
-
-@app.route('/api/debug-time')
-def debug_time():
-    """Debug endpoint - shows server time"""
-    now = datetime.utcnow()
-    return jsonify({
-        'server_time_utc': now.isoformat(),
-        'year': now.year,
-        'month': now.month,
-        'day': now.day,
-        'hour': now.hour,
-        'minute': now.minute,
-        'second': now.second
-    })
-
-@app.route('/api/debug-validate-key')
-def debug_validate_key():
-    """Debug endpoint - shows validation details for a key"""
-    key = request.args.get('key')
-    if not key:
-        return jsonify({'error': 'Key required'}), 400
-    
-    try:
-        parts = key.split('-')
-        now = datetime.utcnow()
-        
-        if len(parts) < 4:
-            return jsonify({
-                'key': key,
-                'error': f'Invalid format: only {len(parts)} parts',
-                'parts': parts
-            })
-        
-        expiry_str = parts[3]
-        expiry_date = datetime.strptime(expiry_str, '%Y%m%d')
-        is_valid = now < expiry_date
-        
-        return jsonify({
-            'key': key,
-            'parts': parts,
-            'expiry_string': expiry_str,
-            'expiry_date': expiry_date.isoformat(),
-            'server_time': now.isoformat(),
-            'is_valid': is_valid,
-            'days_remaining': (expiry_date - now).days
-        })
-    except Exception as e:
-        return jsonify({
-            'key': key,
-            'error': str(e)
-        }), 500
 
 @app.route('/api/validate-key')
 def validate_key():
@@ -1109,6 +1055,604 @@ def contato():
     </html>
     """
     return html
+
+@app.route('/dashboard')
+def dashboard():
+    """Customer dashboard - view and manage licenses"""
+    email = request.args.get('email')
+    key = request.args.get('key')
+    
+    if not email or not key:
+        return redirect(url_for('index'))
+    
+    try:
+        customers = load_customers()
+        if email not in customers:
+            return "Cliente não encontrado", 404
+        
+        customer = customers[email]
+        if customer.get('license_key') != key:
+            return "Chave inválida", 401
+        
+        license_key = customer.get('license_key', '')
+        parts = license_key.split('-')
+        if len(parts) >= 4:
+            expiry_str = parts[3]
+            try:
+                expiry_date = datetime.strptime(expiry_str, '%Y%m%d')
+                days_remaining = (expiry_date - datetime.utcnow()).days
+            except:
+                days_remaining = 0
+        else:
+            days_remaining = 0
+        
+        subscription_status = customer.get('subscription_status', 'unknown')
+        created_at = customer.get('created_at', 'N/A')
+        progress_percent = max(0, min(100, (days_remaining / 365) * 100))
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>📊 Dashboard - Prompt B3</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; padding: 20px; }}
+                .container {{ max-width: 900px; margin: 0 auto; }}
+                .header {{ text-align: center; margin-bottom: 40px; }}
+                .header h1 {{ color: #ffd700; font-size: 2.5em; margin-bottom: 10px; }}
+                .card {{ background: #1a2332; border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 25px; margin-bottom: 20px; }}
+                .card h2 {{ color: #ffd700; margin-bottom: 15px; font-size: 1.3em; }}
+                .info-row {{ display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,215,0,0.1); }}
+                .info-row:last-child {{ border-bottom: none; }}
+                .info-label {{ color: #aaa; font-weight: 500; }}
+                .info-value {{ color: #ffd700; font-weight: bold; font-family: monospace; }}
+                .status-active {{ color: #4ade80; }}
+                .status-inactive {{ color: #ef4444; }}
+                .key-box {{ background: #0a0f1e; padding: 15px; border-radius: 8px; border: 2px solid #ffd700; margin: 15px 0; }}
+                .key-text {{ color: #ffffff; font-family: monospace; font-size: 14px; word-break: break-all; }}
+                .btn {{ display: inline-block; padding: 12px 25px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; margin: 10px 5px 10px 0; }}
+                .btn:hover {{ background: #ffed4e; }}
+                .btn-secondary {{ background: #666; color: #fff; }}
+                .btn-secondary:hover {{ background: #777; }}
+                .progress-bar {{ width: 100%; height: 8px; background: #333; border-radius: 4px; margin: 10px 0; overflow: hidden; }}
+                .progress-fill {{ height: 100%; background: #4ade80; width: {progress_percent}%; }}
+                .warning {{ background: #7c2d12; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ff6b35; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>📊 Seu Dashboard</h1>
+                    <p>Gerencie sua assinatura do Prompt B3</p>
+                </div>
+                
+                <div class="card">
+                    <h2>👤 Informações da Conta</h2>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">{email}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value status-{subscription_status}">{subscription_status.upper()}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Membro desde:</span>
+                        <span class="info-value">{created_at[:10]}</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>🔑 Sua Chave de Licença</h2>
+                    <div class="key-box">
+                        <p class="key-text">{license_key}</p>
+                    </div>
+                    <p style="color: #aaa; font-size: 0.9em; margin-top: 10px;">Use esta chave ao usar o Prompt B3 no ChatGPT, Claude ou Gemini.</p>
+                </div>
+                
+                <div class="card">
+                    <h2>⏱️ Validade da Assinatura</h2>
+                    <div class="info-row">
+                        <span class="info-label">Dias Restantes:</span>
+                        <span class="info-value">{days_remaining} dias</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    {f'<div class="warning">⚠️ Sua assinatura vencerá em breve. Renove agora para continuar usando!</div>' if days_remaining < 30 else ''}
+                </div>
+                
+                <div class="card">
+                    <h2>📄 Histórico de Chaves</h2>
+                    {f'<div style="color: #aaa; font-size: 0.9em;">Você tem {len(customer.get("key_history", []))} chave(s) anterior(es).</div>' if customer.get('key_history') else '<div style="color: #aaa; font-size: 0.9em;">Nenhuma chave anterior.</div>'}
+                    {f'<div style="margin-top: 15px; max-height: 300px; overflow-y: auto;">' + ''.join([f'<div style="background: #0a0f1e; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid #666;"><p style="color: #ffd700; font-family: monospace; font-size: 12px; margin: 0;">{k["key"]}</p><p style="color: #aaa; font-size: 0.8em; margin: 5px 0 0 0;">Emitida em: {k["issued_at"][:10]}</p></div>' for k in customer.get('key_history', [])]) + '</div>' if customer.get('key_history') else ''}
+                </div>
+                
+                <div class="card">
+                    <h2>🔄 Ações</h2>
+                    <button class="btn" onclick="copyToClipboard()">📋 Copiar Chave</button>
+                    <a href="/comprar" class="btn btn-secondary">🔄 Renovar Assinatura</a>
+                    <button class="btn btn-secondary" onclick="cancelSubscription()" style="background: #ef4444;">❌ Cancelar Assinatura</button>
+                    <a href="/" class="btn btn-secondary">🏠 Voltar ao Início</a>
+                </div>
+            </div>
+            
+            <script>
+                function copyToClipboard() {{
+                    const key = '{license_key}';
+                    navigator.clipboard.writeText(key).then(() => {{
+                        alert('Chave copiada para a área de transferência!');
+                    }}).catch(() => {{
+                        alert('Erro ao copiar a chave');
+                    }});
+                }}
+                
+                function cancelSubscription() {{
+                    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso ao Prompt B3.')) {{
+                        return;
+                    }}
+                    
+                    const formData = new FormData();
+                    formData.append('email', '{email}');
+                    formData.append('key', '{license_key}');
+                    
+                    fetch('/cancel-subscription', {{
+                        method: 'POST',
+                        body: formData
+                    }})
+                    .then(response => response.json())
+                    .then(data => {{
+                        if (data.success) {{
+                            alert(data.message);
+                            window.location.href = '/';
+                        }} else {{
+                            alert('Erro: ' + data.error);
+                        }}
+                    }})
+                    .catch(error => {{
+                        alert('Erro ao cancelar assinatura: ' + error);
+                    }});
+                }}
+            </script>
+        </body>
+        </html>
+        """
+        return html
+    except Exception as e:
+        log_debug(f"Error in dashboard: {str(e)}")
+        return f"Erro ao carregar dashboard: {str(e)}", 500
+
+@app.route('/cancel-subscription', methods=['POST'])
+def cancel_subscription():
+    """Cancel a subscription"""
+    email = request.form.get('email')
+    key = request.form.get('key')
+    
+    if not email or not key:
+        return jsonify({'success': False, 'error': 'Email e chave são obrigatórios'}), 400
+    
+    try:
+        customers = load_customers()
+        if email not in customers:
+            return jsonify({'success': False, 'error': 'Cliente não encontrado'}), 404
+        
+        customer = customers[email]
+        if customer.get('license_key') != key:
+            return jsonify({'success': False, 'error': 'Chave inválida'}), 401
+        
+        # Cancel the Stripe subscription
+        configure_stripe()
+        subscription_id = customer.get('subscription_id')
+        if subscription_id:
+            stripe.Subscription.delete(subscription_id)
+            log_debug(f"Cancelled Stripe subscription: {subscription_id}")
+        
+        # Update customer status
+        customer['subscription_status'] = 'cancelled'
+        customers[email] = customer
+        save_customers(customers)
+        log_debug(f"Cancelled subscription for {email}")
+        
+        # Send cancellation email
+        send_cancellation_email(email)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Assinatura cancelada com sucesso. Você receberá um email de confirmação.'
+        })
+    except Exception as e:
+        log_debug(f"Error cancelling subscription: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def send_cancellation_email(email):
+    """Send cancellation confirmation email"""
+    subject = "🛑 Sua Assinatura foi Cancelada"
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #ef4444; text-align: center;">🛑 Assinatura Cancelada</h2>
+            
+            <p style="color: #333; font-size: 16px;">Olá,</p>
+            
+            <p style="color: #333; font-size: 16px;">Sua assinatura do Prompt B3 foi cancelada com sucesso.</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ef4444; margin: 20px 0;">
+                <p style="color: #666; font-size: 14px; margin: 0;"><strong>Data do Cancelamento:</strong> {datetime.utcnow().strftime('%d/%m/%Y %H:%M')}</p>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">📝 Próximos Passos:</h3>
+            <ul style="color: #333; font-size: 15px; line-height: 1.8;">
+                <li>Sua chave de licença deixará de funcionar após o término do período pago</li>
+                <li>Você pode reativar sua assinatura a qualquer momento</li>
+                <li>Se tiver dúvidas, entre em contato conosco</li>
+            </ul>
+            
+            <div style="background-color: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700;">
+                <p style="color: #333; font-size: 14px; margin: 0;"><strong>🙋 Sentiremos sua falta!</strong> Se você tiver alguma sugestão ou feedback, por favor nos envie um email.</p>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">❓ Dúvidas?</h3>
+            <p style="color: #666; font-size: 14px;">Entre em contato conosco em <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700; text-decoration: none;">promptpegardini@gmail.com</a></p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+        </div>
+    </body>
+    </html>
+    """
+    send_email(email, subject, html_content)
+
+@app.route('/admin')
+def admin_dashboard():
+    """Admin dashboard - view sales reports and customer list"""
+    password = request.args.get('password')
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    
+    if not password or password != admin_password:
+        return "Acesso negado", 401
+    
+    try:
+        customers = load_customers()
+        
+        # Calculate statistics
+        total_customers = len(customers)
+        active_subscriptions = sum(1 for c in customers.values() if c.get('subscription_status') == 'active')
+        cancelled_subscriptions = sum(1 for c in customers.values() if c.get('subscription_status') == 'cancelled')
+        
+        # Calculate total revenue (estimate)
+        total_revenue = 0
+        for customer in customers.values():
+            plan = customer.get('plan', 'unknown')
+            if plan == 'monthly':
+                total_revenue += 25
+            elif plan == 'annual':
+                total_revenue += 180
+        
+        # Build customer list HTML
+        customer_rows = ""
+        for email, customer in sorted(customers.items()):
+            status = customer.get('subscription_status', 'unknown')
+            plan = customer.get('plan', 'unknown')
+            created = customer.get('created_at', 'N/A')
+            key = customer.get('license_key', 'N/A')[:20] + '...'
+            status_color = '#4ade80' if status == 'active' else '#ef4444'
+            
+            customer_rows += f"""
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{email}</td>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{plan}</td>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);"><span style="color: {status_color}; font-weight: bold;">{status.upper()}</span></td>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1); font-family: monospace; font-size: 12px;">{key}</td>
+                <td style="padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1);">{created}</td>
+            </tr>
+            """
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>📊 Admin Dashboard - Prompt B3</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; padding: 20px; }}
+                .container {{ max-width: 1400px; margin: 0 auto; }}
+                .header {{ text-align: center; margin-bottom: 40px; }}
+                .header h1 {{ color: #ffd700; font-size: 2.5em; margin-bottom: 10px; }}
+                .stats {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }}
+                .stat-card {{ background: #1a2332; border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 25px; text-align: center; }}
+                .stat-card h3 {{ color: #aaa; font-size: 0.9em; margin-bottom: 15px; text-transform: uppercase; }}
+                .stat-card .number {{ color: #ffd700; font-size: 2.5em; font-weight: bold; }}
+                .table-container {{ background: #1a2332; border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 20px; overflow-x: auto; }}
+                .table-container h2 {{ color: #ffd700; margin-bottom: 20px; }}
+                table {{ width: 100%; border-collapse: collapse; }}
+                table th {{ background: rgba(255,215,0,0.1); padding: 15px; text-align: left; color: #ffd700; font-weight: bold; border-bottom: 2px solid rgba(255,215,0,0.2); }}
+                table td {{ padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1); }}
+                .btn {{ display: inline-block; padding: 12px 25px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; margin-top: 20px; }}
+                .btn:hover {{ background: #ffed4e; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>📊 Admin Dashboard</h1>
+                    <p>Relatório de Vendas e Clientes - Prompt B3</p>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>👥 Total de Clientes</h3>
+                        <div class="number">{total_customers}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>✅ Assinaturas Ativas</h3>
+                        <div class="number" style="color: #4ade80;">{active_subscriptions}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>❌ Assinaturas Canceladas</h3>
+                        <div class="number" style="color: #ef4444;">{cancelled_subscriptions}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>💰 Receita Estimada</h3>
+                        <div class="number">R$ {total_revenue:,.2f}</div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <h2>📋 Lista de Clientes</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Plano</th>
+                                <th>Status</th>
+                                <th>Chave de Licença</th>
+                                <th>Data de Criação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {customer_rows}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <a href="/" class="btn">← Voltar</a>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+    except Exception as e:
+        log_debug(f"Error in admin_dashboard: {str(e)}")
+        return f"Erro ao carregar dashboard admin: {str(e)}", 500
+
+@app.route('/lead-magnet')
+def lead_magnet():
+    """Lead magnet page - capture emails with free ebook"""
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ebook Gratuito - Prompt B3</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }}
+            .container {{ display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; width: 100%; }}
+            .ebook-image {{ display: flex; align-items: center; justify-content: center; }}
+            .ebook-image img {{ max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 10px 40px rgba(255,215,0,0.2); }}
+            .form-section {{ background: #1a2332; border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 40px; }}
+            .form-section h2 {{ color: #ffd700; font-size: 1.8em; margin-bottom: 10px; }}
+            .form-section p {{ color: #aaa; margin-bottom: 20px; font-size: 0.95em; line-height: 1.6; }}
+            .highlight {{ color: #ffd700; font-weight: bold; }}
+            .form-group {{ margin-bottom: 20px; }}
+            .form-group label {{ display: block; color: #ffd700; font-weight: bold; margin-bottom: 8px; }}
+            .form-group input, .form-group textarea {{ width: 100%; padding: 12px; background: #0a0f1e; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff; font-family: inherit; }}
+            .form-group input::placeholder, .form-group textarea::placeholder {{ color: #666; }}
+            .form-group textarea {{ resize: vertical; min-height: 100px; }}
+            .btn {{ width: 100%; padding: 14px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; font-weight: bold; font-size: 1em; cursor: pointer; margin-top: 10px; }}
+            .btn:hover {{ background: #ffed4e; }}
+            @media (max-width: 768px) {{
+                .container {{ grid-template-columns: 1fr; gap: 30px; }}
+                .form-section {{ padding: 30px; }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="ebook-image">
+                <img src="/static/ebook_cover.webp" alt="Capa do Ebook Prompt B3">
+            </div>
+            
+            <div class="form-section">
+                <h2>📋 Guia Introdutório Exclusivo</h2>
+                <p>Aprenda os fundamentos do <strong>Método Barsi e Finclass</strong> em <strong>10 páginas</strong> práticas e diretas.</p>
+                
+                <div style="background: rgba(255,215,0,0.1); padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0; border-radius: 8px;">
+                    <p style="color: #ffd700; font-weight: bold;">✨ Preencha seus dados abaixo e receba o ebook + atualizações sobre novas versões do prompt.</p>
+                </div>
+                
+                <form method="POST" action="/submit-lead">
+                    <div class="form-group">
+                        <label for="email">📧 Seu Email</label>
+                        <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="question">❓ Tem alguma dúvida? (Opcional)</label>
+                        <textarea id="question" name="question" placeholder="Compartilhe sua dúvida ou interesse..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">📥 Receber Ebook Grátis</button>
+                </form>
+                
+                <p style="color: #666; font-size: 0.85em; margin-top: 20px; text-align: center;">
+                    ✅ Sem spam. Você receberá apenas atualizações importantes.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+@app.route('/submit-lead', methods=['POST'])
+def submit_lead():
+    """Process lead form submission and send ebook"""
+    email = request.form.get('email')
+    question = request.form.get('question', '')
+    
+    if not email:
+        return jsonify({'success': False, 'error': 'Email é obrigatório'}), 400
+    
+    try:
+        # Store lead in database
+        customers = load_customers()
+        if email not in customers:
+            customers[email] = {}
+        
+        customers[email]['lead_email'] = email
+        customers[email]['lead_question'] = question
+        customers[email]['lead_date'] = datetime.utcnow().isoformat()
+        customers[email]['is_lead'] = True
+        save_customers(customers)
+        
+        # Send ebook by email
+        send_lead_magnet_email(email, question)
+        
+        # Redirect to thank you page
+        return redirect(f'/thank-you?email={email}')
+    except Exception as e:
+        log_debug(f"Error processing lead: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/thank-you')
+def thank_you():
+    """Thank you page after lead submission"""
+    email = request.args.get('email', 'seu email')
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Obrigado! - Prompt B3</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }}
+            .container {{ max-width: 600px; text-align: center; background: #1a2332; border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 50px; }}
+            .container h1 {{ color: #4ade80; font-size: 2.5em; margin-bottom: 20px; }}
+            .container p {{ color: #aaa; margin-bottom: 20px; font-size: 1.1em; line-height: 1.6; }}
+            .highlight {{ color: #ffd700; font-weight: bold; }}
+            .btn {{ display: inline-block; padding: 14px 30px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 20px; }}
+            .btn:hover {{ background: #ffed4e; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>✅ Obrigado!</h1>
+            <p>Seu ebook está sendo enviado para <span class="highlight">{email}</span></p>
+            <p>Verifique sua caixa de entrada (e a pasta de spam) para receber o ebook e as atualizações exclusivas.</p>
+            <p style="margin-top: 30px; color: #666;">Enquanto isso, conheça nossos planos premium:</p>
+            <a href="/comprar" class="btn">💳 Ver Planos</a>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+def send_lead_magnet_email(email, question=''):
+    """Send lead magnet ebook by email"""
+    subject = "🎁 Seu Ebook Gratuito: Método Barsi + Finclass com IA"
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #ffd700; text-align: center;">🎁 Seu Ebook Exclusivo</h2>
+            
+            <p style="color: #333; font-size: 16px;">Olá,</p>
+            
+            <p style="color: #333; font-size: 16px;">Obrigado por se interessar no <strong>Prompt Fundamentalista B3</strong>!</p>
+            
+            <p style="color: #333; font-size: 16px;">Em anexo, você encontra nosso guia introdutório com os fundamentos do <strong>Método Barsi + Finclass</strong> em 10 páginas práticas.</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0;">
+                <p style="color: #666; font-size: 14px; margin: 0;"><strong>📚 O que você vai aprender:</strong></p>
+                <ul style="color: #666; font-size: 14px; margin: 10px 0;">
+                    <li>✅ Pilares do Método Barsi</li>
+                    <li>✅ Conceitos-chave do Finclass</li>
+                    <li>✅ Como a IA acelera sua análise</li>
+                    <li>✅ Primeiros passos práticos</li>
+                </ul>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">🚀 Próximos Passos:</h3>
+            <p style="color: #333; font-size: 15px;">Após ler o ebook, você estará pronto para:</p>
+            <ol style="color: #333; font-size: 15px; line-height: 1.8;">
+                <li>Escolher uma ação para analisar</li>
+                <li>Coletar dados financeiros</li>
+                <li>Usar o Prompt B3 para análise completa</li>
+                <li>Tomar decisões informadas</li>
+            </ol>
+            
+            <div style="background-color: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700;">
+                <p style="color: #333; font-size: 14px; margin: 0;"><strong>💡 Quer aprofundar ainda mais?</strong></p>
+                <p style="color: #333; font-size: 14px; margin: 10px 0 0 0;">Conheça nossos planos premium com acesso ao Prompt B3 completo, atualizações constantes e suporte por email.</p>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">❓ Dúvidas?</h3>
+            <p style="color: #666; font-size: 14px;">Entre em contato conosco em <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700; text-decoration: none;">promptpegardini@gmail.com</a></p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Send email with attachment
+    if SENDGRID_AVAILABLE and SENDGRID_API_KEY:
+        try:
+            from sendgrid.helpers.mail import Attachment, FileContent, FileName, FileType, Disposition
+            import base64
+            
+            # Read ebook file
+            ebook_path = '/home/ubuntu/lead_magnet_ebook.pdf'
+            with open(ebook_path, 'rb') as f:
+                ebook_content = base64.b64encode(f.read()).decode()
+            
+            # Create attachment
+            attachment = Attachment(
+                FileContent(ebook_content),
+                FileName('Guia_Introdutorio_Prompt_B3.pdf'),
+                FileType('application/pdf'),
+                Disposition('attachment')
+            )
+            
+            # Send email
+            message = Mail(
+                from_email=SENDER_EMAIL,
+                to_emails=email,
+                subject=subject,
+                html_content=html_content
+            )
+            message.attachment = attachment
+            
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            sg.send(message)
+            log_debug(f"Lead magnet email sent to {email}")
+        except Exception as e:
+            log_debug(f"Error sending lead magnet email: {str(e)}")
+    else:
+        log_debug(f"SendGrid not available, skipping lead magnet email to {email}")
 
 @app.route('/comprar')
 def comprar():
