@@ -2448,40 +2448,83 @@ def comprar():
                 <h2 style="color: #ffd700; text-align: center; margin-bottom: 30px;">📱 Ou Pague com PIX</h2>
                 <p style="color: #ccc; text-align: center; margin-bottom: 30px;">Escaneie o QR Code ou copie a chave PIX. Após pagar, envie o comprovante para ativar sua chave.</p>
                 
-                <div style="background: #0f1419; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid rgba(255,215,0,0.3);">
+                <form id="pix-form" enctype="multipart/form-data" style="background: #0f1419; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid rgba(255,215,0,0.3);">
                     <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px;">📧 Seu Email (para receber a chave):</label>
-                    <input type="email" id="pix-email" placeholder="seu@email.com" style="width: 100%; padding: 12px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
-                    <p style="color: #999; font-size: 0.85em; margin-top: 8px;">💡 Dica: Copie este email junto com o comprovante ao enviar para promptpegardini@gmail.com</p>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <!-- Mensal PIX -->
-                    <div class="card" style="text-align: center;">
-                        <h3>📅 Mensal - R$ 25</h3>
-                        <img src="/static/qr_mensal.png" alt="QR Code PIX Mensal" style="width: 200px; height: 200px; margin: 15px auto; border: 2px solid #ffd700; border-radius: 8px;">
-                        <div style="background: #1a2332; padding: 12px; border-radius: 6px; margin: 15px 0; border: 1px solid #ffd700; word-break: break-all;">
-                            <p style="color: #ffd700; font-size: 0.85em; margin: 0 0 8px 0;">Chave PIX:</p>
-                            <p style="color: #fff; font-family: monospace; font-size: 0.9em; margin: 0;">c3b011ff-1c68-4312-a14e-9654ba144575</p>
-                        </div>
-                        <button onclick="copyToClipboard('c3b011ff-1c68-4312-a14e-9654ba144575')" style="width: 100%; padding: 10px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">📋 Copiar Chave PIX</button>
-                    </div>
+                    <input type="email" id="pix-email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 12px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
                     
-                    <!-- Anual PIX -->
-                    <div class="card" style="text-align: center;">
-                        <h3>📅 Anual - R$ 180</h3>
-                        <img src="/static/qr_anual.png" alt="QR Code PIX Anual" style="width: 200px; height: 200px; margin: 15px auto; border: 2px solid #ffd700; border-radius: 8px;">
-                        <div style="background: #1a2332; padding: 12px; border-radius: 6px; margin: 15px 0; border: 1px solid #ffd700; word-break: break-all;">
-                            <p style="color: #ffd700; font-size: 0.85em; margin: 0 0 8px 0;">Chave PIX:</p>
-                            <p style="color: #fff; font-family: monospace; font-size: 0.9em; margin: 0;">c3b011ff-1c68-4312-a14e-9654ba144575</p>
-                        </div>
-                        <button onclick="copyToClipboard('c3b011ff-1c68-4312-a14e-9654ba144575')" style="width: 100%; padding: 10px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">📋 Copiar Chave PIX</button>
+                    <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px; margin-top: 15px;">📎 Anexar Comprovante de Pagamento:</label>
+                    <input type="file" id="pix-receipt" name="receipt" accept="image/*,.pdf" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 0.9em; box-sizing: border-box;">
+                    <p style="color: #999; font-size: 0.85em; margin-bottom: 15px;">📁 Aceita: JPG, PNG, PDF (máx. 10MB)</p>
+                    
+                    <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px;">📅 Qual plano você escolheu?</label>
+                    <select id="pix-plan" name="plan" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
+                        <option value="" style="background: #1a2332; color: #999;">Selecione o plano...</option>
+                        <option value="monthly" style="background: #1a2332; color: #fff;">Mensal - R$ 25</option>
+                        <option value="annual" style="background: #1a2332; color: #fff;">Anual - R$ 180</option>
+                    </select>
+                    
+                    <button type="submit" style="width: 100%; padding: 14px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; font-size: 1em; cursor: pointer;">✉️ Enviar Comprovante</button>
+                    <p id="pix-status" style="color: #ffd700; text-align: center; margin-top: 10px; display: none;"></p>
+                </form>
+                
+                <div style="background: rgba(255,215,0,0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 20px; margin-top: 20px; text-align: center;">
+                    <h3 style="color: #ffd700; margin-bottom: 15px;">🔑 Chave PIX para Cópia Manual:</h3>
+                    <div style="background: #1a2332; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 2px solid #ffd700; word-break: break-all;">
+                        <p style="color: #ffd700; font-size: 0.9em; margin: 0 0 10px 0; font-weight: bold;">c3b011ff-1c68-4312-a14e-9654ba144575</p>
                     </div>
+                    <button onclick="copyToClipboard('c3b011ff-1c68-4312-a14e-9654ba144575')" style="width: 100%; padding: 12px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📋 Copiar Chave PIX</button>
+                    <p style="color: #ccc; font-size: 0.95em; line-height: 1.6;">
+                        <strong style="color: #ffd700;">Como funciona:</strong><br>
+                        1. Copie a chave PIX acima<br>
+                        2. Abra seu app bancário e escolha PIX<br>
+                        3. Cole a chave e confirme o valor<br>
+                        4. Após pagar, envie o comprovante no formulário acima<br>
+                        5. Sua chave será ativada em até 2 horas
+                    </p>
                 </div>
                 
-                <div style="background: rgba(255,215,0,0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; text-align: center;">
-                    <p style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">⏱️ Próximos Passos:</p>
-                    <p style="color: #ccc; font-size: 0.95em;">1. Preencha seu email acima<br>2. Escaneie ou copie a chave PIX<br>3. Realize o pagamento em seu banco<br>4. Envie o comprovante + seu email para <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a><br>5. Sua chave será ativada em até 2 horas</p>
-                </div>
+                <script>
+                document.getElementById('pix-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('pix-email').value;
+                    const plan = document.getElementById('pix-plan').value;
+                    const receipt = document.getElementById('pix-receipt').files[0];
+                    const statusEl = document.getElementById('pix-status');
+                    
+                    if (!email || !plan || !receipt) {
+                        alert('Por favor, preencha todos os campos!');
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('email', email);
+                    formData.append('plan', plan);
+                    formData.append('receipt', receipt);
+                    
+                    try {
+                        statusEl.textContent = '⏳ Enviando...';
+                        statusEl.style.display = 'block';
+                        
+                        const response = await fetch('/submit-pix-receipt', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            statusEl.textContent = '✅ Comprovante enviado com sucesso! Você receberá sua chave em até 2 horas.';
+                            statusEl.style.color = '#00ff00';
+                            document.getElementById('pix-form').reset();
+                        } else {
+                            statusEl.textContent = '❌ Erro ao enviar. Tente novamente.';
+                            statusEl.style.color = '#ff6b6b';
+                        }
+                    } catch (error) {
+                        statusEl.textContent = '❌ Erro de conexão. Tente novamente.';
+                        statusEl.style.color = '#ff6b6b';
+                    }
+                });
+                </script>
             </div>
             
             <div style="max-width: 800px; margin: 60px auto; padding: 30px; background: rgba(255,215,0,0.05); border-radius: 10px; border-left: 4px solid #ffd700;">
@@ -3036,3 +3079,93 @@ Para renovar, acesse: https://prompt-b3-ndes.onrender.com/minha-conta
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
+@app.route('/submit-pix-receipt', methods=['POST'])
+def submit_pix_receipt():
+    """Receber comprovante de PIX e enviar email"""
+    try:
+        email = request.form.get('email')
+        plan = request.form.get('plan')
+        receipt = request.files.get('receipt')
+        
+        if not email or not plan or not receipt:
+            return "Campos obrigatórios faltando", 400
+        
+        # Validar email
+        if '@' not in email:
+            return "Email inválido", 400
+        
+        # Salvar arquivo temporariamente
+        import tempfile
+        import os
+        
+        temp_dir = tempfile.gettempdir()
+        filename = f"pix_receipt_{email.split('@')[0]}_{int(time.time())}.{receipt.filename.split('.')[-1]}"
+        filepath = os.path.join(temp_dir, filename)
+        receipt.save(filepath)
+        
+        # Enviar email com comprovante
+        plan_name = "Mensal (R$ 25/mês)" if plan == "monthly" else "Anual (R$ 180/ano)"
+        
+        msg = MIMEMultipart()
+        msg['From'] = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@promptb3.com')
+        msg['To'] = 'promptpegardini@gmail.com'
+        msg['Subject'] = f'🎯 Novo Comprovante PIX - {plan_name}'
+        
+        body = f"""
+Novo pagamento PIX recebido!
+
+📧 Email do Cliente: {email}
+📅 Plano: {plan_name}
+⏰ Data: {time.strftime('%d/%m/%Y %H:%M:%S')}
+
+Por favor, verifique o comprovante em anexo e ative a chave para o cliente.
+
+---
+Sistema Automático - Prompt B3
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Anexar arquivo
+        with open(filepath, 'rb') as attachment:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename= {filename}')
+            msg.attach(part)
+        
+        # Enviar via SendGrid
+        sg = sendgrid.SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        mail = Mail(
+            from_email='noreply@promptb3.com',
+            to_emails='promptpegardini@gmail.com',
+            subject=f'🎯 Novo Comprovante PIX - {plan_name}',
+            html_content=f"""
+            <h2>Novo pagamento PIX recebido!</h2>
+            <p><strong>Email do Cliente:</strong> {email}</p>
+            <p><strong>Plano:</strong> {plan_name}</p>
+            <p><strong>Data:</strong> {time.strftime('%d/%m/%Y %H:%M:%S')}</p>
+            <p>Por favor, verifique o comprovante em anexo e ative a chave para o cliente.</p>
+            """
+        )
+        
+        # Adicionar anexo
+        with open(filepath, 'rb') as f:
+            data = f.read()
+            mail.attachment = Attachment(
+                FileContent(base64.b64encode(data).decode()),
+                FileName(filename),
+                FileType('application/octet-stream')
+            )
+        
+        response = sg.send(mail)
+        
+        # Limpar arquivo temporário
+        os.remove(filepath)
+        
+        return "Comprovante enviado com sucesso!", 200
+        
+    except Exception as e:
+        print(f"Erro ao enviar comprovante: {e}")
+        return f"Erro: {str(e)}", 500
