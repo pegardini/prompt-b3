@@ -328,7 +328,7 @@ FOOTER = """
 <footer style="background: #1a2332; border-top: 1px solid rgba(255,215,0,0.2); padding: 30px 20px; margin-top: 60px;">
     <div style="max-width: 1200px; margin: 0 auto;">
         <p>&copy; 2026 Prompt Fundamentalista B3 | promptpegardini@gmail.com</p>
-        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚠️ Aviso de Independência:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado, aprovado ou endossado por Luiz Barsi Filho, Finclass, B3 ou qualquer terceiro. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
+        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚠️ Aviso de Independência:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado ou endossado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
         <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚖️ Aviso Legal:</strong> Este produto é um prompt de IA para fins educacionais exclusivamente. Não constitui recomendação, aconselhamento ou sugestão de investimento. A IA pode cometer erros. Sempre verifique informações em fontes oficiais e consulte especialistas antes de tomar decisões financeiras.</p>
         <p style="font-size: 0.85em; margin-top: 10px;"><strong>🤖 Sobre IA:</strong> ChatGPT, Claude e Gemini são marcas de seus respectivos titulares. Este produto não possui afiliação, patrocínio ou endosso dessas plataformas.</p>
         <p style="font-size: 0.85em; margin-top: 10px;"><a href="/terms" style="color: #ffd700; text-decoration: none;">Termos de Uso Completos</a></p>
@@ -353,7 +353,7 @@ def home():
         <div class="container">
             <h1>📈 Prompt Fundamentalista B3</h1>
             <div class="card" style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3); margin-bottom: 30px;">
-                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado, aprovado ou endossado por Luiz Barsi Filho, Finclass, B3 ou qualquer terceiro. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.
+                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado ou endossado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.
             </div>
             
             <div class="card card-destaque" style="text-align: center; padding: 50px 30px; margin-bottom: 40px;">
@@ -2380,15 +2380,8 @@ def terms():
             
             <div class="card">
                 <h2>1. Independência e Não-Afiliação</h2>
-                <p>Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado, aprovado ou endossado por:</p>
-                <ul style="color: #ccc; margin-left: 20px;">
-                    <li>Luiz Barsi Filho</li>
-                    <li>Finclass</li>
-                    <li>B3 (Bolsa de Valores do Brasil)</li>
-                    <li>ChatGPT, Claude, Gemini ou qualquer plataforma de IA</li>
-                    <li>Qualquer terceiro mencionado</li>
-                </ul>
-                <p style="margin-top: 15px;">Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
+                <p>Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado ou aprovado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
+                <p style="margin-top: 15px;">Este produto faz referências educacionais a conceitos e estratégias de investimento públicos. Essas referências são exclusivamente para fins contextuais e não representam afiliação ou endosso.</p>
             </div>
             
             <div class="card">
@@ -2433,6 +2426,7 @@ def terms():
                     <li>Email (para envio de ebook e atualizações)</li>
                     <li>Informações de pagamento (processadas por Stripe)</li>
                     <li>Dados de uso (para melhorar o serviço)</li>
+                    <li>Variável A/B testing para otimização</li>
                 </ul>
                 <p style="margin-top: 15px;">Seus dados não serão vendidos a terceiros. Usamos apenas para fornecer o serviço e comunicações.</p>
             </div>
