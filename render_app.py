@@ -353,7 +353,7 @@ def home():
         <div class="container">
             <h1>📈 Prompt Fundamentalista B3</h1>
             <div class="card" style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3); margin-bottom: 30px;">
-                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado ou endossado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.
+                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado ou endossado por terceiros. Este produto oferece duas abordagens complementares: <b>Análise com Foco em Dividendos</b> e <b>Análise com Foco em Qualidade</b>. Ambas utilizam princípios de análise fundamentalista amplamente documentados na literatura financeira. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.
             </div>
             
             <div class="card card-destaque" style="text-align: center; padding: 50px 30px; margin-bottom: 40px;">
@@ -2382,6 +2382,12 @@ def terms():
                 <h2>1. Independência e Não-Afiliação</h2>
                 <p>Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado ou aprovado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
                 <p style="margin-top: 15px;">Este produto faz referências educacionais a conceitos e estratégias de investimento públicos. Essas referências são exclusivamente para fins contextuais e não representam afiliação ou endosso.</p>
+                <p style="margin-top: 15px;"><strong>Metodologias Utilizadas:</strong> Este produto oferece duas abordagens complementares:</p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li><b>Análise com Foco em Dividendos:</b> Baseada em conceitos de análise fundamentalista focada em renda passiva</li>
+                    <li><b>Análise com Foco em Qualidade:</b> Baseada em conceitos de análise fundamentalista focada em crescimento</li>
+                </ul>
+                <p style="margin-top: 15px;">Ambas utilizam princípios amplamente documentados na literatura de investimento.</p>
             </div>
             
             <div class="card">
