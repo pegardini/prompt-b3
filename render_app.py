@@ -2407,7 +2407,7 @@ def comprar():
                     <form action="/checkout" method="POST" style="margin-bottom: 20px;">
                         <input type="hidden" name="plan" value="monthly">
                         <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
-                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em;">Comprar Agora</button>
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em;">💳 Comprar com Cartão</button>
                     </form>
                     
                     <ul style="text-align: left; color: #ccc;">
@@ -2430,7 +2430,7 @@ def comprar():
                     <form action="/checkout" method="POST" style="margin-bottom: 20px;">
                         <input type="hidden" name="plan" value="annual">
                         <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
-                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em; background: #ffd700; color: #000;">Comprar Agora</button>
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em; background: #ffd700; color: #000;">💳 Comprar com Cartão</button>
                     </form>
                     
                     <ul style="text-align: left; color: #ccc;">
@@ -2441,6 +2441,47 @@ def comprar():
                         <li>✅ Suporte por email</li>
                         <li>✅ Atualizações incluídas</li>
                     </ul>
+                </div>
+            </div>
+            
+            <!-- Seção PIX -->
+            <div style="max-width: 900px; margin: 60px auto; padding: 40px; background: rgba(255,215,0,0.08); border-radius: 10px; border: 2px solid rgba(255,215,0,0.3);">
+                <h2 style="color: #ffd700; text-align: center; margin-bottom: 30px;">📱 Ou Pague com PIX</h2>
+                <p style="color: #ccc; text-align: center; margin-bottom: 30px;">Escaneie o QR Code ou copie a chave PIX. Após pagar, envie o comprovante para ativar sua chave.</p>
+                
+                <div style="background: #0f1419; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid rgba(255,215,0,0.3);">
+                    <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px;">📧 Seu Email (para receber a chave):</label>
+                    <input type="email" id="pix-email" placeholder="seu@email.com" style="width: 100%; padding: 12px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
+                    <p style="color: #999; font-size: 0.85em; margin-top: 8px;">💡 Dica: Copie este email junto com o comprovante ao enviar para promptpegardini@gmail.com</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <!-- Mensal PIX -->
+                    <div class="card" style="text-align: center;">
+                        <h3>📅 Mensal - R$ 25</h3>
+                        <img src="/static/qr_mensal.png" alt="QR Code PIX Mensal" style="width: 200px; height: 200px; margin: 15px auto; border: 2px solid #ffd700; border-radius: 8px;">
+                        <div style="background: #1a2332; padding: 12px; border-radius: 6px; margin: 15px 0; border: 1px solid #ffd700; word-break: break-all;">
+                            <p style="color: #ffd700; font-size: 0.85em; margin: 0 0 8px 0;">Chave PIX:</p>
+                            <p style="color: #fff; font-family: monospace; font-size: 0.9em; margin: 0;">c3b011ff-1c68-4312-a14e-9654ba144575</p>
+                        </div>
+                        <button onclick="copyToClipboard('c3b011ff-1c68-4312-a14e-9654ba144575')" style="width: 100%; padding: 10px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">📋 Copiar Chave PIX</button>
+                    </div>
+                    
+                    <!-- Anual PIX -->
+                    <div class="card" style="text-align: center;">
+                        <h3>📅 Anual - R$ 180</h3>
+                        <img src="/static/qr_anual.png" alt="QR Code PIX Anual" style="width: 200px; height: 200px; margin: 15px auto; border: 2px solid #ffd700; border-radius: 8px;">
+                        <div style="background: #1a2332; padding: 12px; border-radius: 6px; margin: 15px 0; border: 1px solid #ffd700; word-break: break-all;">
+                            <p style="color: #ffd700; font-size: 0.85em; margin: 0 0 8px 0;">Chave PIX:</p>
+                            <p style="color: #fff; font-family: monospace; font-size: 0.9em; margin: 0;">c3b011ff-1c68-4312-a14e-9654ba144575</p>
+                        </div>
+                        <button onclick="copyToClipboard('c3b011ff-1c68-4312-a14e-9654ba144575')" style="width: 100%; padding: 10px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">📋 Copiar Chave PIX</button>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(255,215,0,0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; text-align: center;">
+                    <p style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">⏱️ Próximos Passos:</p>
+                    <p style="color: #ccc; font-size: 0.95em;">1. Preencha seu email acima<br>2. Escaneie ou copie a chave PIX<br>3. Realize o pagamento em seu banco<br>4. Envie o comprovante + seu email para <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a><br>5. Sua chave será ativada em até 2 horas</p>
                 </div>
             </div>
             
