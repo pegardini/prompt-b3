@@ -712,6 +712,7 @@ def subscribe():
             return f"Erro ao criar sessão: {str(e)}", 500
     
     # GET request - show form
+    pix_key = "c3b011ff-1c68-4312-a14e-9654ba144575"
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -719,53 +720,166 @@ def subscribe():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Assinar Agora</title>
-        <style>{CSS}</style>
+        <style>{CSS}
+        .payment-method {{
+            background: #1a2332;
+            border: 2px solid rgba(255,215,0,0.3);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 600px;
+        }}
+        .payment-method.active {{
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.05);
+        }}
+        .payment-tabs {{
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }}
+        .payment-tab {{
+            padding: 12px 30px;
+            border: 2px solid rgba(255,215,0,0.3);
+            background: transparent;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }}
+        .payment-tab.active {{
+            background: #ffd700;
+            color: #000;
+            border-color: #ffd700;
+        }}
+        .payment-content {{
+            display: none;
+        }}
+        .payment-content.active {{
+            display: block;
+        }}
+        .qr-container {{
+            text-align: center;
+            margin: 20px 0;
+        }}
+        .qr-container img {{
+            width: 200px;
+            height: 200px;
+            border: 3px solid #ffd700;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }}
+        .pix-key {{
+            background: #0f1419;
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: monospace;
+            color: #ffd700;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }}
+        .copy-btn {{
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }}
+        .copy-btn:hover {{
+            background: #ffed4e;
+        }}
+        </style>
     </head>
     <body>
         {NAV}
         <div class="container">
-            <h1>💳 Escolha Seu Plano</h1>
+            <h1>💳 Escolha Seu Plano e Forma de Pagamento</h1>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 0 auto;">
-                <!-- Plano Mensal -->
-                <div class="card card-destaque" style="text-align: center;">
-                    <h2>📅 Mensal</h2>
-                    <p style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 25<span style="font-size: 0.5em;">/mês</span></p>
-                    <p style="color: #ccc; margin-bottom: 30px;">Acesso completo por 1 mês</p>
+            <!-- Abas de Pagamento -->
+            <div class="payment-tabs">
+                <button class="payment-tab active" onclick="switchPayment('cartao')">💳 Cartão de Crédito</button>
+                <button class="payment-tab" onclick="switchPayment('pix')">📱 PIX</button>
+            </div>
+            
+            <!-- Método: Cartão -->
+            <div id="cartao" class="payment-content active">
+                <div class="payment-method">
+                    <h2>💳 Pagar com Cartão de Crédito</h2>
+                    <p style="color: #ccc; margin-bottom: 30px;">Pagamento seguro via Stripe. Receba sua chave instantaneamente.</p>
                     
-                    <form method="POST" style="margin-bottom: 20px;">
-                        <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 12px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
-                        <input type="hidden" name="plan" value="monthly">
-                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px;">Assinar Mensal</button>
-                    </form>
-                    
-                    <ul style="text-align: left; font-size: 0.9em;">
-                        <li>✅ Prompt completo</li>
-                        <li>✅ Relatório Visual</li>
-                        <li>✅ Exportação MD/PDF</li>
-                        <li>✅ Suporte por email</li>
-                    </ul>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- Mensal -->
+                        <div class="card" style="text-align: center;">
+                            <h3>📅 Mensal</h3>
+                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 25/mês</p>
+                            <form method="POST" style="margin-bottom: 20px;">
+                                <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f1419; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff;">
+                                <input type="hidden" name="plan" value="monthly">
+                                <button type="submit" class="btn btn-gold" style="width: 100%; padding: 12px;">Comprar com Cartão</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Anual -->
+                        <div class="card" style="text-align: center; border: 2px solid #ffd700;">
+                            <div style="background: #ffd700; color: #000; padding: 6px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; font-size: 0.9em;">MELHOR VALOR</div>
+                            <h3>📆 Anual</h3>
+                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 180/ano</p>
+                            <p style="font-size: 0.9em; color: #90ee90; margin-bottom: 15px;">💰 Economize R$ 120!</p>
+                            <form method="POST" style="margin-bottom: 20px;">
+                                <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f1419; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff;">
+                                <input type="hidden" name="plan" value="annual">
+                                <button type="submit" class="btn btn-gold" style="width: 100%; padding: 12px;">Comprar com Cartão</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                
-                <!-- Plano Anual -->
-                <div class="card card-destaque" style="text-align: center; border: 2px solid #ffd700;">
-                    <div style="background: #ffd700; color: #000; padding: 8px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">MELHOR CUSTO-BENEFÍCIO</div>
-                    <h2>📆 Anual</h2>
-                    <p style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 180<span style="font-size: 0.5em;">/ano</span></p>
-                    <p style="color: #ccc; margin-bottom: 30px;">Acesso completo por 1 ano</p>
+            </div>
+            
+            <!-- Método: PIX -->
+            <div id="pix" class="payment-content">
+                <div class="payment-method">
+                    <h2>📱 Pagar com PIX</h2>
+                    <p style="color: #ccc; margin-bottom: 30px;">Escaneie o QR Code ou copie a chave PIX. Após pagar, envie o comprovante para ativar sua chave.</p>
                     
-                    <form method="POST" style="margin-bottom: 20px;">
-                        <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 12px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
-                        <input type="hidden" name="plan" value="annual">
-                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px;">Assinar Anual</button>
-                    </form>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <!-- Mensal PIX -->
+                        <div class="card" style="text-align: center;">
+                            <h3>📅 Mensal</h3>
+                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 25</p>
+                            <div class="qr-container">
+                                <img src="/static/qr_mensal.png" alt="QR Code PIX Mensal">
+                            </div>
+                            <p style="color: #999; font-size: 0.9em; margin: 15px 0;">Ou copie a chave:</p>
+                            <div class="pix-key">{pix_key}</div>
+                            <button class="copy-btn" onclick="copyToClipboard('{pix_key}')">📋 Copiar Chave PIX</button>
+                        </div>
+                        
+                        <!-- Anual PIX -->
+                        <div class="card" style="text-align: center; border: 2px solid #ffd700;">
+                            <div style="background: #ffd700; color: #000; padding: 6px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; font-size: 0.9em;">MELHOR VALOR</div>
+                            <h3>📆 Anual</h3>
+                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 180</p>
+                            <p style="font-size: 0.9em; color: #90ee90; margin-bottom: 15px;">💰 Economize R$ 120!</p>
+                            <div class="qr-container">
+                                <img src="/static/qr_anual.png" alt="QR Code PIX Anual">
+                            </div>
+                            <p style="color: #999; font-size: 0.9em; margin: 15px 0;">Ou copie a chave:</p>
+                            <div class="pix-key">{pix_key}</div>
+                            <button class="copy-btn" onclick="copyToClipboard('{pix_key}')">📋 Copiar Chave PIX</button>
+                        </div>
+                    </div>
                     
-                    <ul style="text-align: left; font-size: 0.9em;">
-                        <li>✅ Tudo do plano mensal</li>
-                        <li>✅ Economize 40%</li>
-                        <li>✅ Acesso por 12 meses</li>
-                        <li>✅ Prioridade no suporte</li>
-                    </ul>
+                    <div style="background: rgba(255,215,0,0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; text-align: center;">
+                        <p style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">⏱️ Próximos Passos:</p>
+                        <p style="color: #ccc; font-size: 0.95em;">1. Escaneie ou copie a chave PIX<br>2. Realize o pagamento em seu banco<br>3. Envie o comprovante para <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a><br>4. Sua chave será ativada em até 2 horas</p>
+                    </div>
                 </div>
             </div>
             
@@ -774,6 +888,30 @@ def subscribe():
                 <p>Entre em contato conosco em <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a></p>
             </div>
         </div>
+        
+        <script>
+        function switchPayment(method) {{
+            // Esconder todos os conteúdos
+            document.getElementById('cartao').classList.remove('active');
+            document.getElementById('pix').classList.remove('active');
+            
+            // Remover ativo de todos os botões
+            document.querySelectorAll('.payment-tab').forEach(btn => btn.classList.remove('active'));
+            
+            // Mostrar o selecionado
+            document.getElementById(method).classList.add('active');
+            event.target.classList.add('active');
+        }}
+        
+        function copyToClipboard(text) {{
+            navigator.clipboard.writeText(text).then(() => {{
+                alert('✅ Chave PIX copiada para a área de transferência!');
+            }}).catch(() => {{
+                alert('Erro ao copiar. Copie manualmente: ' + text);
+            }});
+        }}
+        </script>
+        
         {FOOTER}
     </body>
     </html>
