@@ -1323,6 +1323,9 @@ def admin_dashboard():
         total_customers = len(customers)
         active_subscriptions = sum(1 for c in customers.values() if c.get('subscription_status') == 'active')
         cancelled_subscriptions = sum(1 for c in customers.values() if c.get('subscription_status') == 'cancelled')
+        total_leads = sum(1 for c in customers.values() if c.get('is_lead'))
+        leads_converted = sum(1 for c in customers.values() if c.get('is_lead') and c.get('subscription_status') == 'active')
+        conversion_rate = (leads_converted / total_leads * 100) if total_leads > 0 else 0
         
         # Calculate total revenue (estimate)
         total_revenue = 0
@@ -1401,6 +1404,18 @@ def admin_dashboard():
                     <div class="stat-card">
                         <h3>💰 Receita Estimada</h3>
                         <div class="number">R$ {total_revenue:,.2f}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📧 Leads Capturados</h3>
+                        <div class="number" style="color: #60a5fa;">{total_leads}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🎯 Leads Convertidos</h3>
+                        <div class="number" style="color: #34d399;">{leads_converted}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📈 Taxa de Conversão</h3>
+                        <div class="number" style="color: #fbbf24;">{conversion_rate:.1f}%</div>
                     </div>
                 </div>
                 
@@ -1513,7 +1528,7 @@ def submit_lead():
         return jsonify({'success': False, 'error': 'Email é obrigatório'}), 400
     
     try:
-        # Store lead in database
+        # Store lead in database with analytics
         customers = load_customers()
         if email not in customers:
             customers[email] = {}
@@ -1522,10 +1537,18 @@ def submit_lead():
         customers[email]['lead_question'] = question
         customers[email]['lead_date'] = datetime.utcnow().isoformat()
         customers[email]['is_lead'] = True
+        customers[email]['ebook_downloaded'] = True
+        customers[email]['ebook_download_date'] = datetime.utcnow().isoformat()
+        customers[email]['utm_source'] = request.args.get('utm_source', 'organic')
+        customers[email]['utm_medium'] = request.args.get('utm_medium', 'direct')
+        customers[email]['utm_campaign'] = request.args.get('utm_campaign', 'lead_magnet')
         save_customers(customers)
         
         # Send ebook by email
         send_lead_magnet_email(email, question)
+        
+        # Send Day 1 email sequence
+        send_email_sequence_day1(email)
         
         # Redirect to thank you page
         return redirect(f'/thank-you?email={email}')
@@ -1535,8 +1558,13 @@ def submit_lead():
 
 @app.route('/thank-you')
 def thank_you():
-    """Thank you page after lead submission"""
+    """Thank you page after lead submission with conversion CTA"""
     email = request.args.get('email', 'seu email')
+    
+    # Get download count from database
+    customers = load_customers()
+    download_count = len([c for c in customers.values() if 'leads' in str(c)])
+    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -1546,27 +1574,207 @@ def thank_you():
         <title>Obrigado! - Prompt B3</title>
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }}
-            .container {{ max-width: 600px; text-align: center; background: #1a2332; border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 50px; }}
-            .container h1 {{ color: #4ade80; font-size: 2.5em; margin-bottom: 20px; }}
-            .container p {{ color: #aaa; margin-bottom: 20px; font-size: 1.1em; line-height: 1.6; }}
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0f1e 0%, #1a2332 100%); color: #ffffff; min-height: 100vh; padding: 20px; }}
+            .container {{ max-width: 700px; margin: 0 auto; }}
+            .success-card {{ background: #1a2332; border: 2px solid rgba(74,222,128,0.5); border-radius: 12px; padding: 40px; margin-bottom: 30px; text-align: center; }}
+            .success-card h1 {{ color: #4ade80; font-size: 2.5em; margin-bottom: 15px; }}
+            .success-card p {{ color: #aaa; margin-bottom: 15px; font-size: 1.05em; line-height: 1.6; }}
             .highlight {{ color: #ffd700; font-weight: bold; }}
-            .btn {{ display: inline-block; padding: 14px 30px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 20px; }}
-            .btn:hover {{ background: #ffed4e; }}
+            .social-proof {{ background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.2); border-radius: 8px; padding: 15px; margin: 20px 0; font-size: 0.95em; color: #ccc; }}
+            .social-proof strong {{ color: #ffd700; }}
+            .cta-section {{ background: #1a2332; border: 2px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 35px; margin-bottom: 30px; text-align: center; }}
+            .cta-section h2 {{ color: #ffd700; font-size: 1.8em; margin-bottom: 15px; }}
+            .cta-section p {{ color: #aaa; margin-bottom: 20px; line-height: 1.6; }}
+            .btn {{ display: inline-block; padding: 16px 40px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 1.05em; margin: 10px 5px; transition: all 0.3s; }}
+            .btn:hover {{ background: #ffed4e; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,215,0,0.3); }}
+            .btn-secondary {{ background: rgba(255,215,0,0.2); color: #ffd700; border: 2px solid #ffd700; }}
+            .btn-secondary:hover {{ background: rgba(255,215,0,0.3); }}
+            .features {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }}
+            .feature {{ background: rgba(255,215,0,0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ffd700; }}
+            .feature p {{ color: #ccc; font-size: 0.9em; margin: 0; }}
+            .testimonial {{ background: rgba(74,222,128,0.05); border-left: 3px solid #4ade80; padding: 15px; margin: 15px 0; border-radius: 4px; font-style: italic; color: #ccc; }}
+            .countdown {{ color: #ff6b6b; font-weight: bold; }}
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>✅ Obrigado!</h1>
-            <p>Seu ebook está sendo enviado para <span class="highlight">{email}</span></p>
-            <p>Verifique sua caixa de entrada (e a pasta de spam) para receber o ebook e as atualizações exclusivas.</p>
-            <p style="margin-top: 30px; color: #666;">Enquanto isso, conheça nossos planos premium:</p>
-            <a href="/comprar" class="btn">💳 Ver Planos</a>
+            <!-- Success Message -->
+            <div class="success-card">
+                <h1>✅ Obrigado!</h1>
+                <p>Seu ebook está sendo enviado para <span class="highlight">{email}</span></p>
+                <p style="color: #999; font-size: 0.95em;">Verifique sua caixa de entrada (e a pasta de spam) em <span class="countdown">2-5 minutos</span></p>
+                
+                <div class="social-proof">
+                    <strong>📊 {download_count}+ pessoas</strong> já baixaram o ebook e estão aprendendo análise de ações com IA
+                </div>
+            </div>
+            
+            <!-- CTA Section -->
+            <div class="cta-section">
+                <h2>🚀 Pronto para Análises Profissionais?</h2>
+                <p>O ebook é apenas o começo. O <strong>Prompt B3 Completo</strong> oferece:</p>
+                
+                <div class="features">
+                    <div class="feature">
+                        <p>✅ <strong>Análise Completa</strong><br/>Barsi + Finclass + Veredito</p>
+                    </div>
+                    <div class="feature">
+                        <p>✅ <strong>Relatório Visual</strong><br/>Gráficos coloridos e profissionais</p>
+                    </div>
+                    <div class="feature">
+                        <p>✅ <strong>Atualizações</strong><br/>Novas versões do prompt</p>
+                    </div>
+                    <div class="feature">
+                        <p>✅ <strong>Suporte</strong><br/>Email direto com dúvidas</p>
+                    </div>
+                </div>
+                
+                <p style="margin: 25px 0 0 0; color: #999; font-size: 0.9em;">Começar com apenas <strong style="color: #ffd700;">R$ 25/mês</strong> ou <strong style="color: #ffd700;">R$ 180/ano</strong></p>
+                
+                <div style="margin-top: 20px;">
+                    <a href="/comprar" class="btn">💳 Assinar Agora</a>
+                    <a href="/trial" class="btn btn-secondary">📥 Teste 7 Dias Grátis</a>
+                </div>
+            </div>
+            
+            <!-- Testimonial -->
+            <div class="testimonial">
+                "Depois de usar o Prompt B3, minha análise de ações ficou muito mais rápida e precisa. Recomendo!" — João, Investidor
+            </div>
+            
+            <!-- Next Steps -->
+            <div style="background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.2); border-radius: 8px; padding: 20px; text-align: left;">
+                <h3 style="color: #ffd700; margin-bottom: 15px;">📋 Próximos Passos:</h3>
+                <ol style="color: #aaa; line-height: 2; margin-left: 20px;">
+                    <li>Leia o ebook (10 minutos)</li>
+                    <li>Escolha um plano (teste grátis ou assinatura)</li>
+                    <li>Comece a analisar ações com IA</li>
+                    <li>Receba atualizações exclusivas</li>
+                </ol>
+            </div>
         </div>
     </body>
     </html>
     """
     return html
+
+def send_email_sequence_day1(email):
+    """Send Day 1 email: Welcome + CTA to try free"""
+    subject = "🚀 Comece Agora: Teste 7 Dias Grátis do Prompt B3"
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #ffd700; text-align: center;">🚀 Bem-vindo ao Prompt B3!</h2>
+            
+            <p style="color: #333; font-size: 16px;">Olá,</p>
+            
+            <p style="color: #333; font-size: 16px;">Você acabou de baixar nosso ebook. Agora é hora de colocar em prática!</p>
+            
+            <div style="background-color: rgba(255,215,0,0.1); padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700; text-align: center;">
+                <p style="color: #333; font-size: 16px; margin: 0;"><strong>📥 Teste 7 Dias Grátis</strong></p>
+                <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">Sem cartão de crédito. Sem compromisso.</p>
+                <a href="https://prompt-b3-ndes.onrender.com/trial" style="display: inline-block; background-color: #ffd700; color: #0a0f1e; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Começar Teste Grátis</a>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">✅ O que você terá acesso:</h3>
+            <ul style="color: #333; font-size: 15px; line-height: 1.8;">
+                <li>✓ Prompt B3 Completo</li>
+                <li>✓ Análise de até 10 ações</li>
+                <li>✓ Relatórios visuais em PDF</li>
+                <li>✓ Suporte por email</li>
+            </ul>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+        </div>
+    </body>
+    </html>
+    """
+    send_email(email, subject, html_content)
+    log_debug(f"Day 1 email sent to {email}")
+
+def send_email_sequence_day3(email):
+    """Send Day 3 email: Success stories + pricing"""
+    subject = "💡 Veja Como Outros Estão Usando o Prompt B3"
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #ffd700; text-align: center;">💡 Histórias de Sucesso</h2>
+            
+            <p style="color: #333; font-size: 16px;">Olá,</p>
+            
+            <p style="color: #333; font-size: 16px;">Vários usuários já estão usando o Prompt B3 para análises profissionais. Veja alguns resultados:</p>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #4ade80; margin: 20px 0;">
+                <p style="color: #333; font-size: 14px; margin: 0;"><strong>"Reduzi meu tempo de análise de 2 horas para 15 minutos!"</strong></p>
+                <p style="color: #666; font-size: 13px; margin: 5px 0 0 0;">— Maria, Investidora</p>
+            </div>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #4ade80; margin: 20px 0;">
+                <p style="color: #333; font-size: 14px; margin: 0;"><strong>"Os gráficos visuais me ajudaram a tomar melhores decisões."</strong></p>
+                <p style="color: #666; font-size: 13px; margin: 5px 0 0 0;">— Carlos, Trader</p>
+            </div>
+            
+            <h3 style="color: #333; margin-top: 30px;">💳 Planos Disponíveis:</h3>
+            <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #eee;"><strong>Teste 7 Dias</strong></td>
+                    <td style="padding: 10px; border: 1px solid #eee; text-align: right;">Grátis</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #eee;"><strong>Mensal</strong></td>
+                    <td style="padding: 10px; border: 1px solid #eee; text-align: right;">R$ 25/mês</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #eee;"><strong>Anual</strong></td>
+                    <td style="padding: 10px; border: 1px solid #eee; text-align: right;">R$ 180/ano</td>
+                </tr>
+            </table>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="https://prompt-b3-ndes.onrender.com/comprar" style="display: inline-block; background-color: #ffd700; color: #0a0f1e; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">Ver Todos os Planos</a>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+        </div>
+    </body>
+    </html>
+    """
+    send_email(email, subject, html_content)
+    log_debug(f"Day 3 email sent to {email}")
+
+def send_email_sequence_day7(email):
+    """Send Day 7 email: Last chance offer"""
+    subject = "⏰ Última Chance: Desconto Especial para Você"
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #ff6b6b; text-align: center;">⏰ Oferta Especial Expirando!</h2>
+            
+            <p style="color: #333; font-size: 16px;">Olá,</p>
+            
+            <p style="color: #333; font-size: 16px;">Você tem até amanhã para aproveitar nossa oferta especial de boas-vindas.</p>
+            
+            <div style="background-color: rgba(255,107,107,0.1); padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ff6b6b; text-align: center;">
+                <p style="color: #333; font-size: 18px; margin: 0;"><strong>🎁 Primeiro Mês com 50% OFF</strong></p>
+                <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">Use o código: <strong>EBOOK50</strong></p>
+                <a href="https://prompt-b3-ndes.onrender.com/comprar" style="display: inline-block; background-color: #ff6b6b; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Aproveitar Oferta</a>
+            </div>
+            
+            <p style="color: #333; font-size: 15px; margin-top: 20px;">Não deixe passar essa oportunidade!</p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+        </div>
+    </body>
+    </html>
+    """
+    send_email(email, subject, html_content)
+    log_debug(f"Day 7 email sent to {email}")
 
 def send_lead_magnet_email(email, question=''):
     """Send lead magnet ebook by email"""
