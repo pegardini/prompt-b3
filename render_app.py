@@ -14,8 +14,8 @@ app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
 # Stripe configuration - lazy loading (read at request time, not at module load time)
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
-PRICE_MONTHLY = 'price_1Ts4DcBO1eUMFGitmiqEB8cW'
-PRICE_ANNUAL = 'price_1Ts4EnBO1eUMFGitr2bWqfvU'
+PRICE_MONTHLY = 'price_1Tsn1CBcwD1zxuENx6qkb5Kp'
+PRICE_ANNUAL = 'price_1Tsn1DBcwD1zxuEN9LPPAIwG'
 
 def configure_stripe():
     """Configure Stripe API key from environment variables (lazy loading)"""
