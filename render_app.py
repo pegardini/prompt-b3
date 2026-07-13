@@ -334,8 +334,113 @@ FOOTER = """
 
 @app.route('/')
 def home():
-    """Redirect to lead magnet landing page"""
-    return redirect('/lead-magnet')
+    """Home page - Prompt B3 propaganda and features"""
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Prompt Fundamentalista B3</title>
+        <style>{CSS}</style>
+    </head>
+    <body>
+        {NAV}
+        <div class="container">
+            <h1>📈 Prompt Fundamentalista B3</h1>
+            <div class="card" style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3); margin-bottom: 30px;">
+                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este é um projeto <strong>não oficial</strong>, não autorizado ou endossado por Luiz Barsi ou Finclass.
+            </div>
+            
+            <div class="card card-destaque" style="text-align: center; padding: 50px 30px; margin-bottom: 40px;">
+                <p style="font-size: 1.3em; margin-bottom: 15px; color: #ffd700; font-weight: bold;">Análise Inteligente de Ações B3 com IA</p>
+                <p style="font-size: 1.1em; margin-bottom: 30px; color: #ccc;">Método Fundamentalista Barsi + Finclass | Funciona com ChatGPT, Claude e Gemini</p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <a href="/trial" class="btn btn-gold" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">📥 Teste 7 Dias Grátis</a>
+                    <a href="/comprar" class="btn btn-green" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">💳 Assinar Agora</a>
+                </div>
+            </div>
+
+            <h2 style="text-align: center; margin-bottom: 30px;">🎬 Veja Como Funciona</h2>
+            <div style="margin: 30px 0; text-align: center;">
+                <iframe width="100%" height="400" style="max-width: 600px; border-radius: 12px;" src="https://www.youtube.com/embed/ZljR8zJzu4Q" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 40px 0;">
+                <div class="card" style="text-align: center;">
+                    <p style="font-size: 2em; margin-bottom: 10px;">✅</p>
+                    <h3>Prompt Pronto</h3>
+                    <p>Copie e cole em qualquer IA</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <p style="font-size: 2em; margin-bottom: 10px;">📊</p>
+                    <h3>Análise Completa</h3>
+                    <p>Barsi + Finclass + Veredito</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <p style="font-size: 2em; margin-bottom: 10px;">🎨</p>
+                    <h3>Relatório Visual</h3>
+                    <p>Gráficos coloridos e profissionais</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <p style="font-size: 2em; margin-bottom: 10px;">🔑</p>
+                    <h3>Chave Única</h3>
+                    <p>Válida por 7 dias ou 1 ano</p>
+                </div>
+            </div>
+
+            <h2 style="text-align: center; margin: 60px 0 30px;">📈 Como Usar em 3 Passos</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px;">
+                <div class="card">
+                    <h3>1️⃣ Baixe o Prompt</h3>
+                    <p>Clique em "Teste 7 Dias" ou "Assinar Agora" e receba seu prompt com chave única</p>
+                </div>
+                <div class="card">
+                    <h3>2️⃣ Cole na IA</h3>
+                    <p>Abra ChatGPT, Claude ou Gemini. Cole o prompt e peça a análise de uma ação</p>
+                </div>
+                <div class="card">
+                    <h3>3️⃣ Veja o Relatório</h3>
+                    <p>Copie a resposta, vá em "Relatório Visual" e gere gráficos profissionais</p>
+                </div>
+            </div>
+
+            <h2 style="text-align: center; margin: 60px 0 30px;">❓ Dúvidas Frequentes</h2>
+            <div class="card">
+                <h3>📄 O que é um arquivo MD (Markdown)?</h3>
+                <p>Markdown é um formato de texto simples que pode ser convertido para HTML, PDF ou outros formatos. É muito usado em documentação técnica.</p>
+            </div>
+            <div class="card">
+                <h3>🔑 Como funciona a chave de licença?</h3>
+                <p>A chave é única e válida por 7 dias (trial) ou 1 ano (assinatura). Inclua a chave no prompt para que a IA reconheça sua licença.</p>
+            </div>
+            <div class="card">
+                <h3>🤖 Posso usar em qualquer IA?</h3>
+                <p>Sim! O prompt funciona com ChatGPT, Claude, Gemini e qualquer outra IA que aceite prompts de texto.</p>
+            </div>
+            <div class="card">
+                <h3>📊 Posso exportar o relatório em PDF?</h3>
+                <p>Sim! Na página "Relatório Visual", clique em "Imprimir / Salvar PDF" para gerar um PDF profissional.</p>
+            </div>
+
+            <h2 style="text-align: center; margin: 60px 0 30px;">📚 Ganhe um Ebook Gratuito</h2>
+            <div class="card card-destaque" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center;">
+                <div style="text-align: center;">
+                    <img src="/static/ebook_cover.webp" style="max-width: 100%; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.3);">
+                </div>
+                <div>
+                    <h3>📖 Guia Introdutório Exclusivo</h3>
+                    <p>Aprenda os fundamentos do Método Barsi e Finclass em 10 páginas práticas e diretas.</p>
+                    <p style="margin-top: 20px; color: #ffd700; font-weight: bold;">Receba o ebook + atualizações exclusivas sobre novas versões do prompt.</p>
+                    <a href="/lead-magnet" class="btn btn-gold" style="display: inline-block; padding: 14px 30px; margin-top: 20px; text-decoration: none;">🎁 Receber Ebook Grátis</a>
+                </div>
+            </div>
+        </div>
+        {FOOTER}
+    </body>
+    </html>
+    """
+    return html
 
 @app.route('/trial', methods=['GET', 'POST'])
 def trial():
