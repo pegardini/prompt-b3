@@ -848,6 +848,12 @@ def subscribe():
                     <h2>📱 Pagar com PIX</h2>
                     <p style="color: #ccc; margin-bottom: 30px;">Escaneie o QR Code ou copie a chave PIX. Após pagar, envie o comprovante para ativar sua chave.</p>
                     
+                    <div style="background: #0f1419; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid rgba(255,215,0,0.3);">
+                        <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px;">📧 Seu Email (para receber a chave):</label>
+                        <input type="email" id="pix-email" placeholder="seu@email.com" style="width: 100%; padding: 12px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
+                        <p style="color: #999; font-size: 0.85em; margin-top: 8px;">💡 Dica: Copie este email junto com o comprovante ao enviar para promptpegardini@gmail.com</p>
+                    </div>
+                    
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <!-- Mensal PIX -->
                         <div class="card" style="text-align: center;">
@@ -878,7 +884,7 @@ def subscribe():
                     
                     <div style="background: rgba(255,215,0,0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; text-align: center;">
                         <p style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">⏱️ Próximos Passos:</p>
-                        <p style="color: #ccc; font-size: 0.95em;">1. Escaneie ou copie a chave PIX<br>2. Realize o pagamento em seu banco<br>3. Envie o comprovante para <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a><br>4. Sua chave será ativada em até 2 horas</p>
+                        <p style="color: #ccc; font-size: 0.95em;">1. Preencha seu email acima<br>2. Escaneie ou copie a chave PIX<br>3. Realize o pagamento em seu banco<br>4. Envie o comprovante + seu email para <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a><br>5. Sua chave será ativada em até 2 horas</p>
                     </div>
                 </div>
             </div>
