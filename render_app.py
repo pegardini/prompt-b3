@@ -2021,6 +2021,194 @@ def comprar():
     """
     return html
 
+@app.route('/analytics')
+def analytics_dashboard():
+    """Comprehensive analytics dashboard - view funnel metrics"""
+    password = request.args.get('password')
+    admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+    
+    if not password or password != admin_password:
+        return "Acesso negado", 401
+    
+    try:
+        customers = load_customers()
+        
+        # Funnel metrics
+        total_leads = sum(1 for c in customers.values() if c.get('is_lead'))
+        leads_converted = sum(1 for c in customers.values() if c.get('is_lead') and c.get('subscription_status') == 'active')
+        trial_users = sum(1 for c in customers.values() if c.get('plan') == 'trial')
+        trial_converted = sum(1 for c in customers.values() if c.get('plan') == 'trial' and c.get('subscription_status') == 'active')
+        
+        # Conversion rates
+        lead_to_trial_rate = (trial_users / total_leads * 100) if total_leads > 0 else 0
+        trial_to_paid_rate = (trial_converted / trial_users * 100) if trial_users > 0 else 0
+        overall_conversion_rate = (leads_converted / total_leads * 100) if total_leads > 0 else 0
+        
+        # Revenue metrics
+        monthly_revenue = sum(25 for c in customers.values() if c.get('plan') == 'monthly' and c.get('subscription_status') == 'active')
+        annual_revenue = sum(180 for c in customers.values() if c.get('plan') == 'annual' and c.get('subscription_status') == 'active')
+        total_revenue = monthly_revenue + annual_revenue
+        
+        # A/B Testing metrics
+        variant_a_leads = sum(1 for c in customers.values() if c.get('ab_variant') == 'A')
+        variant_b_leads = sum(1 for c in customers.values() if c.get('ab_variant') == 'B')
+        variant_c_leads = sum(1 for c in customers.values() if c.get('ab_variant') == 'C')
+        variant_a_converted = sum(1 for c in customers.values() if c.get('ab_variant') == 'A' and c.get('subscription_status') == 'active')
+        variant_b_converted = sum(1 for c in customers.values() if c.get('ab_variant') == 'B' and c.get('subscription_status') == 'active')
+        variant_c_converted = sum(1 for c in customers.values() if c.get('ab_variant') == 'C' and c.get('subscription_status') == 'active')
+        variant_a_rate = (variant_a_converted / variant_a_leads * 100) if variant_a_leads > 0 else 0
+        variant_b_rate = (variant_b_converted / variant_b_leads * 100) if variant_b_leads > 0 else 0
+        variant_c_rate = (variant_c_converted / variant_c_leads * 100) if variant_c_leads > 0 else 0
+        
+        # Best performer
+        best_variant = 'A'
+        best_rate = variant_a_rate
+        if variant_b_rate > best_rate:
+            best_variant = 'B'
+            best_rate = variant_b_rate
+        if variant_c_rate > best_rate:
+            best_variant = 'C'
+            best_rate = variant_c_rate
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>📊 Analytics Dashboard - Prompt B3</title>
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; padding: 20px; }}
+                .container {{ max-width: 1400px; margin: 0 auto; }}
+                .header {{ text-align: center; margin-bottom: 40px; }}
+                .header h1 {{ color: #ffd700; font-size: 2.5em; margin-bottom: 10px; }}
+                .section {{ background: #1a2332; border: 1px solid rgba(255,215,0,0.2); border-radius: 12px; padding: 25px; margin-bottom: 30px; }}
+                .section h2 {{ color: #ffd700; font-size: 1.5em; margin-bottom: 20px; }}
+                .metrics {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }}
+                .metric {{ background: rgba(255,215,0,0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ffd700; }}
+                .metric-label {{ color: #aaa; font-size: 0.9em; margin-bottom: 8px; }}
+                .metric-value {{ color: #ffd700; font-size: 1.8em; font-weight: bold; }}
+                .metric-unit {{ color: #666; font-size: 0.8em; }}
+                table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+                table th {{ background: rgba(255,215,0,0.1); padding: 12px; text-align: left; color: #ffd700; font-weight: bold; border-bottom: 2px solid rgba(255,215,0,0.2); }}
+                table td {{ padding: 12px; border-bottom: 1px solid rgba(255,215,0,0.1); }}
+                .winner {{ background: rgba(74,222,128,0.1); }}
+                .winner-badge {{ display: inline-block; background: #4ade80; color: #0a0f1e; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; }}
+                .btn {{ display: inline-block; padding: 12px 25px; background: #ffd700; color: #0a0f1e; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; margin-top: 20px; }}
+                .btn:hover {{ background: #ffed4e; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>📊 Analytics Dashboard</h1>
+                    <p>Métricas Completas de Conversão e Receita</p>
+                </div>
+                
+                <!-- Funnel Metrics -->
+                <div class="section">
+                    <h2>🔗 Funil de Conversão</h2>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-label">📧 Leads Capturados</div>
+                            <div class="metric-value">{total_leads}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">📥 Testes Iniciados</div>
+                            <div class="metric-value">{trial_users}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">💳 Clientes Pagantes</div>
+                            <div class="metric-value">{leads_converted}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">% Lead → Trial</div>
+                            <div class="metric-value">{lead_to_trial_rate:.1f}%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">% Trial → Paid</div>
+                            <div class="metric-value">{trial_to_paid_rate:.1f}%</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">% Conversão Total</div>
+                            <div class="metric-value">{overall_conversion_rate:.1f}%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Revenue Metrics -->
+                <div class="section">
+                    <h2>💰 Receita</h2>
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-label">Receita Mensal</div>
+                            <div class="metric-value">R$ {monthly_revenue:,.0f}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Receita Anual</div>
+                            <div class="metric-value">R$ {annual_revenue:,.0f}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Receita Total</div>
+                            <div class="metric-value">R$ {total_revenue:,.0f}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">MRR (Mensal)</div>
+                            <div class="metric-value">R$ {monthly_revenue:,.0f}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- A/B Testing Results -->
+                <div class="section">
+                    <h2>🎯 A/B Testing Results</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Variante</th>
+                                <th>Leads</th>
+                                <th>Convertidos</th>
+                                <th>Taxa</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="{'winner' if best_variant == 'A' else ''}">
+                                <td><strong>Variante A</strong> (📋 Guia)</td>
+                                <td>{variant_a_leads}</td>
+                                <td>{variant_a_converted}</td>
+                                <td><strong>{variant_a_rate:.1f}%</strong></td>
+                                <td>{'🏆 Melhor' if best_variant == 'A' else ''}</td>
+                            </tr>
+                            <tr class="{'winner' if best_variant == 'B' else ''}">
+                                <td><strong>Variante B</strong> (💡 IA)</td>
+                                <td>{variant_b_leads}</td>
+                                <td>{variant_b_converted}</td>
+                                <td><strong>{variant_b_rate:.1f}%</strong></td>
+                                <td>{'🏆 Melhor' if best_variant == 'B' else ''}</td>
+                            </tr>
+                            <tr class="{'winner' if best_variant == 'C' else ''}">
+                                <td><strong>Variante C</strong> (📊 Mudar)</td>
+                                <td>{variant_c_leads}</td>
+                                <td>{variant_c_converted}</td>
+                                <td><strong>{variant_c_rate:.1f}%</strong></td>
+                                <td>{'🏆 Melhor' if best_variant == 'C' else ''}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <a href="/admin?password={admin_password}" class="btn">← Voltar ao Admin</a>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+    except Exception as e:
+        log_debug(f"Error in analytics_dashboard: {str(e)}")
+        return f"Erro ao carregar analytics: {str(e)}", 500
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
     plan = request.form.get('plan')
