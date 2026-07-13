@@ -325,10 +325,14 @@ NAV = """
 """
 
 FOOTER = """
-<footer>
-    <p>&copy; 2026 Prompt Fundamentalista B3 | promptpegardini@gmail.com</p>
-    <p style="font-size: 0.85em;">⚠️ Aviso de Independência: Este projeto é <strong>independente e não oficial</strong>. Não é autorizado, endossado ou afiliado com Luiz Barsi ou Finclass.</p>
-    <p style="font-size: 0.85em;">⚖️ Aviso Legal: Este produto é um prompt de IA para fins educacionais. Não constitui recomendação de investimento. A IA pode cometer erros. Sempre verifique em fontes oficiais.</p>
+<footer style="background: #1a2332; border-top: 1px solid rgba(255,215,0,0.2); padding: 30px 20px; margin-top: 60px;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <p>&copy; 2026 Prompt Fundamentalista B3 | promptpegardini@gmail.com</p>
+        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚠️ Aviso de Independência:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado, aprovado ou endossado por Luiz Barsi Filho, Finclass, B3 ou qualquer terceiro. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
+        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚖️ Aviso Legal:</strong> Este produto é um prompt de IA para fins educacionais exclusivamente. Não constitui recomendação, aconselhamento ou sugestão de investimento. A IA pode cometer erros. Sempre verifique informações em fontes oficiais e consulte especialistas antes de tomar decisões financeiras.</p>
+        <p style="font-size: 0.85em; margin-top: 10px;"><strong>🤖 Sobre IA:</strong> ChatGPT, Claude e Gemini são marcas de seus respectivos titulares. Este produto não possui afiliação, patrocínio ou endosso dessas plataformas.</p>
+        <p style="font-size: 0.85em; margin-top: 10px;"><a href="/terms" style="color: #ffd700; text-decoration: none;">Termos de Uso Completos</a></p>
+    </div>
 </footer>
 """
 
@@ -349,12 +353,12 @@ def home():
         <div class="container">
             <h1>📈 Prompt Fundamentalista B3</h1>
             <div class="card" style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3); margin-bottom: 30px;">
-                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este é um projeto <strong>não oficial</strong>, não autorizado ou endossado por Luiz Barsi ou Finclass.
+                <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado, aprovado ou endossado por Luiz Barsi Filho, Finclass, B3 ou qualquer terceiro. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.
             </div>
             
             <div class="card card-destaque" style="text-align: center; padding: 50px 30px; margin-bottom: 40px;">
                 <p style="font-size: 1.3em; margin-bottom: 15px; color: #ffd700; font-weight: bold;">Análise Inteligente de Ações B3 com IA</p>
-                <p style="font-size: 1.1em; margin-bottom: 30px; color: #ccc;">Método Fundamentalista Barsi + Finclass | Funciona com ChatGPT, Claude e Gemini</p>
+                <p style="font-size: 1.1em; margin-bottom: 30px; color: #ccc;">Análise Fundamentalista Híbrida | Funciona com ChatGPT, Claude e Gemini</p>
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                     <a href="/trial" class="btn btn-gold" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">📥 Teste 7 Dias Grátis</a>
                     <a href="/comprar" class="btn btn-green" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">💳 Assinar Agora</a>
@@ -430,7 +434,7 @@ def home():
                 </div>
                 <div>
                     <h3>📖 Guia Introdutório Exclusivo</h3>
-                    <p>Aprenda os fundamentos do Método Barsi e Finclass em 10 páginas práticas e diretas.</p>
+                    <p>Aprenda os fundamentos da Análise Fundamentalista com IA em 10 páginas práticas e diretas.</p>
                     <p style="margin-top: 20px; color: #ffd700; font-weight: bold;">Receba o ebook + atualizações exclusivas sobre novas versões do prompt.</p>
                     <a href="/lead-magnet" class="btn btn-gold" style="display: inline-block; padding: 14px 30px; margin-top: 20px; text-decoration: none;">🎁 Receber Ebook Grátis</a>
                 </div>
@@ -2353,6 +2357,106 @@ def checkout():
         return f"Erro ao criar sessão de checkout: {str(e)}", 500
 
 
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
+@app.route('/terms')
+def terms():
+    """Terms of Use page"""
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Termos de Uso - Prompt B3</title>
+        <style>{CSS}</style>
+    </head>
+    <body>
+        {NAV}
+        <div class="container">
+            <h1>📋 Termos de Uso</h1>
+            
+            <div class="card">
+                <h2>1. Independência e Não-Afiliação</h2>
+                <p>Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado, aprovado ou endossado por:</p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li>Luiz Barsi Filho</li>
+                    <li>Finclass</li>
+                    <li>B3 (Bolsa de Valores do Brasil)</li>
+                    <li>ChatGPT, Claude, Gemini ou qualquer plataforma de IA</li>
+                    <li>Qualquer terceiro mencionado</li>
+                </ul>
+                <p style="margin-top: 15px;">Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
+            </div>
+            
+            <div class="card">
+                <h2>2. Isenção de Responsabilidade - Investimento</h2>
+                <p><strong>Este produto NÃO constitui:</strong></p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li>Recomendação de investimento</li>
+                    <li>Aconselhamento financeiro</li>
+                    <li>Sugestão de compra ou venda de ações</li>
+                    <li>Garantia de retorno financeiro</li>
+                </ul>
+                <p style="margin-top: 15px;">Sempre consulte especialistas e fontes oficiais antes de tomar qualquer decisão de investimento. Você é responsável por suas decisões financeiras.</p>
+            </div>
+            
+            <div class="card">
+                <h2>3. Limitações de Responsabilidade - IA</h2>
+                <p>Inteligência artificial pode cometer erros, incluindo:</p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li>Cálculos incorretos</li>
+                    <li>Interpretações equivocadas de dados</li>
+                    <li>Alucinações ou informações fabricadas</li>
+                    <li>Análises incompletas ou tendenciosas</li>
+                </ul>
+                <p style="margin-top: 15px;">Sempre verifique os resultados em fontes oficiais e não confie cegamente em análises geradas por IA.</p>
+            </div>
+            
+            <div class="card">
+                <h2>4. Uso Educacional</h2>
+                <p>Este produto é destinado exclusivamente para fins educacionais. O usuário concorda em:</p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li>Usar o produto apenas para aprender conceitos de análise fundamentalista</li>
+                    <li>Não usar para fins comerciais sem autorização</li>
+                    <li>Não reproduzir ou distribuir o conteúdo sem permissão</li>
+                    <li>Respeitar direitos autorais e propriedade intelectual</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>5. Dados Pessoais</h2>
+                <p>Coletamos apenas:</p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li>Email (para envio de ebook e atualizações)</li>
+                    <li>Informações de pagamento (processadas por Stripe)</li>
+                    <li>Dados de uso (para melhorar o serviço)</li>
+                </ul>
+                <p style="margin-top: 15px;">Seus dados não serão vendidos a terceiros. Usamos apenas para fornecer o serviço e comunicações.</p>
+            </div>
+            
+            <div class="card">
+                <h2>6. Cancelamento de Assinatura</h2>
+                <p>Você pode cancelar sua assinatura a qualquer momento. Após o cancelamento:</p>
+                <ul style="color: #ccc; margin-left: 20px;">
+                    <li>Você perderá acesso ao prompt e funcionalidades premium</li>
+                    <li>Não há reembolso por dias não utilizados</li>
+                    <li>Você pode reativar a assinatura a qualquer momento</li>
+                </ul>
+            </div>
+            
+            <div class="card" style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3);">
+                <p style="color: #ff9800;"><strong>⚠️ Última atualização:</strong> 13 de julho de 2026</p>
+                <p style="color: #ff9800; margin-top: 10px;"><strong>Ao usar este produto, você concorda com todos os termos acima.</strong></p>
+            </div>
+        </div>
+        {FOOTER}
+    </body>
+    </html>
+    """
+    return html
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
