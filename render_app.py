@@ -261,7 +261,7 @@ def create_customer(email, license_key, trial_expiry=None, stripe_customer_id=No
     }
     save_customers(customers)
 
-def update_subscription(email, stripe_customer_id, subscription_id, status):
+def update_subscription(email, stripe_customer_id, subscription_id, status, plan='monthly'):
     """Update subscription in JSON file and generate license key"""
     try:
         log_debug(f"update_subscription called for {email}")
@@ -305,13 +305,21 @@ def update_subscription(email, stripe_customer_id, subscription_id, status):
         log_debug(f"Successfully saved customer: {email}")
         
         # Send welcome email with license key
-        send_license_email(email, license_key)
+        send_license_email(email, license_key, plan)
     except Exception as e:
         log_debug(f"ERROR in update_subscription: {str(e)}")
         raise
 
-def send_license_email(email, license_key):
-    """Send license key email to customer with prompt attachment"""
+def send_license_email(email, license_key, plan='monthly'):
+    """Send license key email to customer with prompt attachment based on plan"""
+    # Determine which prompt file to send based on plan
+    if plan == 'annual':
+        prompt_file = os.path.join(BASE_DIR, 'PROMPT_COMPLETO_1ANO.md')
+        plan_name = "Plano Anual - Versão Completa"
+    else:
+        prompt_file = os.path.join(BASE_DIR, 'PROMPT_LITE_7DIAS.md')
+        plan_name = "Plano Mensal - Versão Lite"
+    
     subject = "🔑 Sua Chave de Licença + Prompt B3"
     html_content = f"""
     <html>
@@ -326,11 +334,12 @@ def send_license_email(email, license_key):
             <div style="background-color: #0a0f1e; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700;">
                 <p style="color: #ffd700; font-size: 14px; margin: 0; text-align: center;">Sua Chave de Licença:</p>
                 <p style="color: #ffffff; font-size: 18px; font-weight: bold; margin: 10px 0; text-align: center; font-family: monospace;">{license_key}</p>
+                <p style="color: #ffd700; font-size: 12px; margin: 10px 0; text-align: center;">{plan_name}</p>
             </div>
             
             <h3 style="color: #333; margin-top: 30px;">📝 Próximos Passos:</h3>
             <ol style="color: #333; font-size: 15px; line-height: 1.8;">
-                <li><strong>Baixe o arquivo em anexo:</strong> PROMPT_MESTRE_HIBRIDO_B3_v7.md</li>
+                <li><strong>Baixe o arquivo em anexo:</strong> Seu Prompt B3 ({plan_name})</li>
                 <li>Abra ChatGPT, Claude ou Gemini</li>
                 <li>Cole o conteúdo do arquivo no chat</li>
                 <li>Cole sua chave de licença quando solicitado</li>
@@ -351,7 +360,7 @@ def send_license_email(email, license_key):
     </body>
     </html>
     """
-    send_email_with_attachment(email, subject, html_content, PROMPT_FILE)
+    send_email_with_attachment(email, subject, html_content, prompt_file)
 
 def send_email_with_attachment(to_email, subject, html_content, attachment_path):
     """Send email with file attachment using SendGrid"""
@@ -936,11 +945,19 @@ def success():
         session = stripe.checkout.Session.retrieve(session_id)
         customer_email = session.customer_details.email
         subscription_id = session.subscription
+        
+        # Determine plan based on price_id
+        plan = 'monthly'
+        if session.line_items:
+            for item in session.line_items.data:
+                if item.price.id == PRICE_ANNUAL:
+                    plan = 'annual'
+                    break
         log_debug(f"Retrieved session for email: {customer_email}")
         
         # Update customer in database
         log_debug(f"Calling update_subscription for {customer_email}")
-        update_subscription(customer_email, session.customer, subscription_id, 'active')
+        update_subscription(customer_email, session.customer, subscription_id, 'active', plan)
         log_debug(f"update_subscription completed")
         
         # Get license key with retry logic (webhook may not have processed yet)
