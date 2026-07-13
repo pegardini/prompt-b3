@@ -225,7 +225,7 @@ def send_license_email(email, license_key):
                 <li>Abra ChatGPT, Claude ou Gemini</li>
                 <li>Cole o conteúdo do arquivo no chat</li>
                 <li>Cole sua chave de licença quando solicitado</li>
-                <li>Comece a analisar ações com o Método Barsi + Finclass</li>
+                <li>Comece a analisar ações com Análise Híbrida (Qualidade + Dividendos)</li>
             </ol>
             
             <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0;">
@@ -379,7 +379,7 @@ def home():
                 <div class="card" style="text-align: center;">
                     <p style="font-size: 2em; margin-bottom: 10px;">📊</p>
                     <h3>Análise Completa</h3>
-                    <p>Barsi + Finclass + Veredito</p>
+                    <p>Análise Qualidade + Dividendos + Veredito</p>
                 </div>
                 <div class="card" style="text-align: center;">
                     <p style="font-size: 2em; margin-bottom: 10px;">🎨</p>
@@ -725,7 +725,7 @@ def success():
                         <li>Copie sua chave de licença acima</li>
                         <li>Abra ChatGPT, Claude ou Gemini</li>
                         <li>Cole o prompt (você receberá por email)</li>
-                        <li>Comece a analisar ações com o Método Barsi + Finclass</li>
+                        <li>Comece a analisar ações com Análise Híbrida (Qualidade + Dividendos)</li>
                     </ol>
                 </div>
                 
@@ -1021,11 +1021,11 @@ def relatorio():
     html += '</div>\n'
     html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">\n'
     html += '<div class="card">\n'
-    html += '<h3>📈 Análise Barsi</h3>\n'
+    html += '<h3>📊 Análise de Dividendos</h3>\n'
     html += '<canvas id="barsiChart"></canvas>\n'
     html += '</div>\n'
     html += '<div class="card">\n'
-    html += '<h3>💰 Análise Finclass</h3>\n'
+    html += '<h3>📈 Análise de Qualidade</h3>\n'
     html += '<canvas id="finclassChart"></canvas>\n'
     html += '</div>\n'
     html += '</div>\n'
@@ -1048,8 +1048,8 @@ def relatorio():
     html += '  const lines = input.split("\\n");\n'
     html += '  let barsiScore = 70, finclassScore = 75;\n'
     html += '  lines.forEach(line => {\n'
-    html += '    if (line.includes("Barsi")) barsiScore = Math.random() * 100;\n'
-    html += '    if (line.includes("Finclass")) finclassScore = Math.random() * 100;\n'
+    html += '    if (line.includes("Dividendos")) barsiScore = Math.random() * 100;\n'
+    html += '    if (line.includes("Qualidade")) finclassScore = Math.random() * 100;\n'
     html += '  });\n'
     html += '  criarGraficos(barsiScore, finclassScore);\n'
     html += '  criarTabela();\n'
@@ -1074,7 +1074,7 @@ def relatorio():
     html += '}\n'
     html += 'function downloadRelatorioMD() {\n'
     html += '  const input = document.getElementById("rel-input").value;\n'
-    html += '  const md = `# 📊 Relatório Fundamentalista B3\\n\\n## Análise Barsi\\n${gerarAsciiChart(70, "Barsi")}\\n\\n## Análise Finclass\\n${gerarAsciiChart(75, "Finclass")}\\n\\n## Filtros\\n- P/L: ✅ Aprovado\\n- Dividend Yield: ✅ Aprovado\\n- ROE: ⚠️ Atenção\\n\\n## Análise Original\\n${input}`;\n'
+    html += '  const md = `# 📊 Relatório Fundamentalista B3\\n\\n## Análise de Dividendos\\n${gerarAsciiChart(70, "Dividendos")}\\n\\n## Análise de Qualidade\\n${gerarAsciiChart(75, "Qualidade")}\\n\\n## Filtros\\n- P/L: ✅ Aprovado\\n- Dividend Yield: ✅ Aprovado\\n- ROE: ⚠️ Atenção\\n\\n## Análise Original\\n${input}`;\n'
     html += '  const blob = new Blob([md], { type: "text/markdown" });\n'
     html += '  const url = URL.createObjectURL(blob);\n'
     html += '  const a = document.createElement("a");\n'
@@ -1613,13 +1613,13 @@ def lead_magnet():
     variants = {
         'A': {
             'title': '📋 Guia Introdutório Exclusivo',
-            'subtitle': 'Aprenda os fundamentos do <strong>Método Barsi e Finclass</strong> em <strong>10 páginas</strong> práticas e diretas.',
+            'subtitle': 'Aprenda os fundamentos de duas <strong>Análises Complementares: Qualidade e Dividendos</strong> em <strong>10 páginas</strong> práticas e diretas.',
             'highlight': '✨ Preencha seus dados abaixo e receba o ebook + atualizações sobre novas versões do prompt.',
             'button': '📥 Receber Ebook Grátis'
         },
         'B': {
             'title': '💡 Domine Análise de Ações com IA',
-            'subtitle': 'Descubra como usar <strong>IA + Método Barsi</strong> para análises profissionais em minutos.',
+            'subtitle': 'Descubra como usar <strong>IA + Análise de Dividendos</strong> para análises profissionais em minutos.',
             'highlight': '🌟 Receba o ebook + acesso a dicas exclusivas de investimento.',
             'button': '🌟 Quero Aprender Agora'
         },
@@ -1804,7 +1804,7 @@ def thank_you():
                 
                 <div class="features">
                     <div class="feature">
-                        <p>✅ <strong>Análise Completa</strong><br/>Barsi + Finclass + Veredito</p>
+                        <p>✅ <strong>Análise Completa</strong><br/>Qualidade + Dividendos + Veredito</p>
                     </div>
                     <div class="feature">
                         <p>✅ <strong>Relatório Visual</strong><br/>Gráficos coloridos e profissionais</p>
@@ -1966,7 +1966,7 @@ def send_email_sequence_day7(email):
 
 def send_lead_magnet_email(email, question=''):
     """Send lead magnet ebook by email"""
-    subject = "🎁 Seu Ebook Gratuito: Método Barsi + Finclass com IA"
+    subject = "🎁 Seu Ebook Gratuito: Análise Fundamentalista com IA"
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
@@ -1977,13 +1977,13 @@ def send_lead_magnet_email(email, question=''):
             
             <p style="color: #333; font-size: 16px;">Obrigado por se interessar no <strong>Prompt Fundamentalista B3</strong>!</p>
             
-            <p style="color: #333; font-size: 16px;">Em anexo, você encontra nosso guia introdutório com os fundamentos do <strong>Método Barsi + Finclass</strong> em 10 páginas práticas.</p>
+            <p style="color: #333; font-size: 16px;">Em anexo, você encontra nosso guia introdutório com os fundamentos de duas <strong>Análises Complementares: Qualidade e Dividendos</strong> em 10 páginas práticas.</p>
             
             <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ffd700; margin: 20px 0;">
                 <p style="color: #666; font-size: 14px; margin: 0;"><strong>📚 O que você vai aprender:</strong></p>
                 <ul style="color: #666; font-size: 14px; margin: 10px 0;">
-                    <li>✅ Pilares do Método Barsi</li>
-                    <li>✅ Conceitos-chave do Finclass</li>
+                    <li>✅ Pilares da Análise de Dividendos</li>
+                    <li>✅ Conceitos-chave da Análise de Qualidade</li>
                     <li>✅ Como a IA acelera sua análise</li>
                     <li>✅ Primeiros passos práticos</li>
                 </ul>
