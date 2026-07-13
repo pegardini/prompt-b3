@@ -2399,9 +2399,6 @@ def checkout():
 
 
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
-
 @app.route('/terms')
 def terms():
     """Terms of Use page"""
@@ -2498,6 +2495,198 @@ def terms():
     </html>
     """
     return html
+
+@app.route('/minha-conta', methods=['GET', 'POST'])
+def minha_conta():
+    """Customer account page - shows license key, validity and download prompt"""
+    email = request.args.get('email', '') or request.form.get('email', '')
+    error = None
+    customer = None
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+
+    if email:
+        customers = load_customers()
+        customer = customers.get(email)
+        if not customer:
+            error = 'Email não encontrado. Verifique se é o mesmo email usado no cadastro.'
+
+    if not email:
+        content = f"""
+            <div class="card">
+                <h2>🔍 Acesse sua Conta</h2>
+                <p style="color: #aaa; margin-bottom: 20px;">Digite o email que você usou no cadastro para ver sua chave de licença e baixar o prompt.</p>
+                <form method="POST" action="/minha-conta">
+                    <div style="margin-bottom: 15px;">
+                        <label style="color: #ffd700; font-weight: bold; display: block; margin-bottom: 8px;">📧 Seu Email</label>
+                        <input type="email" name="email" placeholder="seu@email.com" required
+                            style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #fff; font-size: 1em;">
+                    </div>
+                    <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em;">Acessar Minha Conta</button>
+                </form>
+                <p style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9em;">
+                    Não tem conta? <a href="/trial" style="color: #ffd700;">Inicie seu teste grátis de 7 dias</a>
+                </p>
+            </div>
+        """
+    elif error:
+        content = f"""
+            <div class="card" style="border: 1px solid rgba(255,61,0,0.4); background: rgba(255,61,0,0.05);">
+                <p style="color: #ff3d00;">⚠️ {error}</p>
+                <a href="/minha-conta" style="color: #ffd700; margin-top: 10px; display: inline-block;">← Tentar novamente</a>
+            </div>
+        """
+    else:
+        license_key = customer.get('license_key', '')
+        expiry_str = customer.get('trial_expiry') or customer.get('subscription_expiry', '')
+        plan = customer.get('plan', 'Trial 7 Dias')
+        is_active = False
+        expiry_display = 'N/A'
+        days_left = 0
+        if expiry_str:
+            try:
+                expiry_dt = datetime.fromisoformat(expiry_str[:19])
+                is_active = expiry_dt > datetime.utcnow()
+                expiry_display = expiry_dt.strftime('%d/%m/%Y')
+                days_left = max(0, (expiry_dt - datetime.utcnow()).days)
+            except:
+                pass
+        status_class = 'status-active' if is_active else 'status-expired'
+        status_text = f'✅ Ativa — {days_left} dia(s) restante(s)' if is_active else '🔴 Expirada'
+        content = f"""
+            <style>
+                .key-box {{ font-family: monospace; background: #0a0f1e; padding: 18px; border-radius: 10px; word-break: break-all; font-size: 1.05em; color: #ffd700; border: 1px solid rgba(255,215,0,0.4); letter-spacing: 1px; }}
+                .status-badge {{ display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 0.9em; }}
+                .status-active {{ background: rgba(0,200,83,0.2); color: #00c853; border: 1px solid #00c853; }}
+                .status-expired {{ background: rgba(255,61,0,0.2); color: #ff3d00; border: 1px solid #ff3d00; }}
+                .step {{ display: flex; gap: 15px; align-items: flex-start; margin-bottom: 15px; }}
+                .step-num {{ background: #ffd700; color: #0a0f1e; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; font-size: 0.95em; }}
+            </style>
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h2 style="margin-bottom: 5px;">📧 {email}</h2>
+                        <p style="color: #aaa; font-size: 0.9em;">Plano: <strong style="color: #ffd700;">{plan}</strong></p>
+                    </div>
+                    <span class="status-badge {status_class}">{status_text}</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>🔑 Sua Chave de Licença</h3>
+                <div class="key-box">{license_key}</div>
+                <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <button onclick="navigator.clipboard.writeText('{license_key}').then(() => this.textContent = '✅ Copiado!')" 
+                        class="btn btn-gold" style="flex: 1; min-width: 150px;">
+                        📋 Copiar Chave
+                    </button>
+                    <a href="/download-prompt?email={email}" class="btn btn-green" style="flex: 1; min-width: 200px; text-align: center; text-decoration: none;">
+                        📥 Baixar Prompt com Minha Chave
+                    </a>
+                </div>
+                <p style="color: #666; font-size: 0.85em; margin-top: 12px;">
+                    ⏰ Validade: <strong style="color: #ffd700;">{expiry_display}</strong>
+                </p>
+            </div>
+            <div class="card">
+                <h3>🚀 Como Usar</h3>
+                <div class="step"><div class="step-num">1</div><p style="color: #ccc;">Clique em <strong style="color: #ffd700;">"📥 Baixar Prompt com Minha Chave"</strong></p></div>
+                <div class="step"><div class="step-num">2</div><p style="color: #ccc;">Abra o arquivo <code style="color: #ffd700;">.txt</code> baixado</p></div>
+                <div class="step"><div class="step-num">3</div><p style="color: #ccc;">Selecione tudo (<kbd>Ctrl+A</kbd>) e copie (<kbd>Ctrl+C</kbd>)</p></div>
+                <div class="step"><div class="step-num">4</div><p style="color: #ccc;">Abra <strong>ChatGPT, Claude ou Gemini</strong> e cole o prompt</p></div>
+                <div class="step"><div class="step-num">5</div><p style="color: #ccc;">A IA valida sua chave <strong style="color: #00c853;">automaticamente</strong> e inicia a análise! 🎉</p></div>
+            </div>
+            <div class="card" style="background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.2);">
+                <h3>🔄 Renovar / Atualizar Prompt</h3>
+                <p style="color: #aaa; margin-bottom: 15px;">Ao renovar, uma nova chave será gerada. Volte aqui e baixe o prompt novamente — a nova chave já virá embutida.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="/subscribe" class="btn btn-gold" style="text-decoration: none;">Renovar Assinatura</a>
+                    <a href="/trial" class="btn" style="text-decoration: none; background: rgba(255,255,255,0.1);">Novo Teste 7 Dias</a>
+                </div>
+            </div>
+        """
+
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Minha Conta - Prompt B3</title>
+        <style>{CSS}</style>
+    </head>
+    <body>
+        {NAV}
+        <div class="container">
+            <h1>👤 Minha Conta</h1>
+            {content}
+        </div>
+        {FOOTER}
+    </body>
+    </html>
+    """
+
+
+@app.route('/download-prompt')
+def download_prompt():
+    """Download prompt .txt with license key already embedded"""
+    import re
+    from flask import Response
+    email = request.args.get('email', '').strip()
+    if not email:
+        return redirect('/minha-conta')
+    customers = load_customers()
+    customer = customers.get(email)
+    if not customer:
+        return redirect('/minha-conta')
+    license_key = customer.get('license_key', '')
+    expiry_str = customer.get('trial_expiry') or customer.get('subscription_expiry', '')
+    plan = customer.get('plan', 'Trial 7 Dias')
+    expiry_display = ''
+    if expiry_str:
+        try:
+            expiry_dt = datetime.fromisoformat(expiry_str[:19])
+            expiry_display = expiry_dt.strftime('%d/%m/%Y')
+        except:
+            pass
+    # Load prompt master file
+    try:
+        with open('PROMPT_MESTRE_HIBRIDO_B3_v7.md', 'r', encoding='utf-8') as f:
+            prompt_text = f.read()
+    except:
+        prompt_text = prompt_com_chave(license_key)
+    # Replace placeholder with real key
+    prompt_text = prompt_text.replace('[CHAVE_DE_LICENCA]', license_key)
+    # Replace the header block with personalized header
+    new_header = f"""================================================================
+SISTEMA DE ANALISE FUNDAMENTALISTA B3 v7.3 - ATIVACAO
+================================================================
+SUA CHAVE DE LICENCA (JA EMBUTIDA - VALIDACAO AUTOMATICA):
+CHAVE: {license_key}
+PLANO: {plan}
+VALIDADE: {expiry_display}
+EMAIL: {email}
+
+INSTRUCAO: Cole este prompt completo no ChatGPT, Claude ou Gemini.
+A chave ja esta embutida - a IA ira validar automaticamente.
+Para renovar, acesse: https://prompt-b3-ndes.onrender.com/minha-conta
+================================================================
+
+"""
+    prompt_text = re.sub(
+        r'ATENCAO:.*?={64}\n',
+        new_header,
+        prompt_text,
+        count=1,
+        flags=re.DOTALL
+    )
+    filename = f'Prompt_B3_{plan.replace(" ", "_")}_{email.split("@")[0]}.txt'
+    return Response(
+        prompt_text,
+        mimetype='text/plain; charset=utf-8',
+        headers={{'Content-Disposition': f'attachment; filename="{filename}"'}}
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
