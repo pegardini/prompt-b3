@@ -2426,12 +2426,31 @@ def terms():
                 <h2>1. Independência e Não-Afiliação</h2>
                 <p>Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado, patrocinado, licenciado ou aprovado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
                 <p style="margin-top: 15px;">Este produto faz referências educacionais a conceitos e estratégias de investimento públicos. Essas referências são exclusivamente para fins contextuais e não representam afiliação ou endosso.</p>
-                <p style="margin-top: 15px;"><strong>Metodologias Utilizadas:</strong> Este produto oferece duas abordagens complementares:</p>
-                <ul style="color: #ccc; margin-left: 20px;">
-                    <li><b>Análise com Foco em Dividendos:</b> Baseada em conceitos de análise fundamentalista focada em renda passiva</li>
-                    <li><b>Análise com Foco em Qualidade:</b> Baseada em conceitos de análise fundamentalista focada em crescimento</li>
-                </ul>
-                <p style="margin-top: 15px;">Ambas utilizam princípios amplamente documentados na literatura de investimento.</p>
+                <p style="margin-top: 15px;"><strong>Metodologias Utilizadas:</strong> Este produto oferece duas abordagens complementares, ambas fundamentadas em obras clássicas e amplamente reconhecidas da literatura de investimento:</p>
+
+                <div style="margin-top: 20px; padding: 18px; background: rgba(255,215,0,0.05); border-left: 4px solid #ffd700; border-radius: 0 8px 8px 0;">
+                    <p style="color: #ffd700; font-weight: bold; margin-bottom: 12px;">📊 Análise com Foco em Dividendos</p>
+                    <p style="color: #ccc; margin-bottom: 10px;">Baseada em conceitos de análise fundamentalista voltada à renda passiva e seleção de empresas pagadoras de proventos. Principais referências literárias:</p>
+                    <ul style="color: #aaa; margin-left: 20px; line-height: 1.9;">
+                        <li><b style="color: #ccc;">GRAHAM, Benjamin.</b> <em>O Investidor Inteligente.</em> Nova York: Harper &amp; Brothers, 1949. (Trad. brasileira: HarperCollins, 2016.)</li>
+                        <li><b style="color: #ccc;">GRAHAM, Benjamin; DODD, David L.</b> <em>Security Analysis.</em> Nova York: McGraw-Hill, 1934.</li>
+                        <li><b style="color: #ccc;">SIEGEL, Jeremy J.</b> <em>Stocks for the Long Run.</em> Nova York: McGraw-Hill, 1994.</li>
+                        <li><b style="color: #ccc;">WILLIAMS, John Burr.</b> <em>The Theory of Investment Value.</em> Cambridge: Harvard University Press, 1938.</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 20px; padding: 18px; background: rgba(0,200,83,0.05); border-left: 4px solid #00c853; border-radius: 0 8px 8px 0;">
+                    <p style="color: #00c853; font-weight: bold; margin-bottom: 12px;">📈 Análise com Foco em Qualidade</p>
+                    <p style="color: #ccc; margin-bottom: 10px;">Baseada em conceitos de análise fundamentalista voltada à qualidade empresarial, vantagens competitivas e crescimento sustentável. Principais referências literárias:</p>
+                    <ul style="color: #aaa; margin-left: 20px; line-height: 1.9;">
+                        <li><b style="color: #ccc;">FISHER, Philip A.</b> <em>Common Stocks and Uncommon Profits.</em> Nova York: Harper &amp; Brothers, 1958. (Trad. brasileira: Saraiva, 2021.)</li>
+                        <li><b style="color: #ccc;">GREENBLATT, Joel.</b> <em>The Little Book That Beats the Market.</em> Nova Jersey: Wiley, 2005.</li>
+                        <li><b style="color: #ccc;">DORSEY, Pat.</b> <em>The Little Book That Builds Wealth.</em> Nova Jersey: Wiley, 2008.</li>
+                        <li><b style="color: #ccc;">DAMODARAN, Aswath.</b> <em>Investment Valuation: Tools and Techniques for Determining the Value of Any Asset.</em> Nova Jersey: Wiley, 2002.</li>
+                    </ul>
+                </div>
+
+                <p style="margin-top: 20px; color: #888; font-size: 0.9em;">⚠️ As referências acima são obras de domínio público ou de ampla circulação acadêmica. Este produto não possui qualquer afiliação com os autores ou editoras citados. As abordagens implementadas foram desenvolvidas de forma independente, inspiradas nos princípios gerais dessas obras.</p>
             </div>
             
             <div class="card">
