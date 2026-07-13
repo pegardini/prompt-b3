@@ -692,7 +692,7 @@ def subscribe():
             # Create checkout session
             price_id = PRICE_MONTHLY if plan == 'monthly' else PRICE_ANNUAL
             session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
+                payment_method_types=['card', 'pix'],
                 customer=customer.id,
                 line_items=[{
                     'price': price_id,
@@ -701,6 +701,7 @@ def subscribe():
                 mode='subscription',
                 success_url=f'{request.host_url}success?session_id={{CHECKOUT_SESSION_ID}}',
                 cancel_url=f'{request.host_url}subscribe',
+                locale='pt-BR',
             )
             
             # Save customer to database
@@ -2502,7 +2503,7 @@ def checkout():
         configure_stripe()
         
         session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
+            payment_method_types=['card', 'pix'],
             line_items=[{
                 'price': price_id,
                 'quantity': 1,
@@ -2511,6 +2512,7 @@ def checkout():
             success_url=request.host_url.rstrip('/') + '/success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=request.host_url.rstrip('/') + '/cancel',
             customer_email=email,
+            locale='pt-BR',
         )
         return redirect(session.url, code=303)
     except ValueError as e:
