@@ -692,7 +692,7 @@ def subscribe():
             # Create checkout session
             price_id = PRICE_MONTHLY if plan == 'monthly' else PRICE_ANNUAL
             session = stripe.checkout.Session.create(
-                payment_method_types=['card', 'pix'],
+                payment_method_types=['card'],
                 customer=customer.id,
                 line_items=[{
                     'price': price_id,
@@ -2503,7 +2503,7 @@ def checkout():
         configure_stripe()
         
         session = stripe.checkout.Session.create(
-            payment_method_types=['card', 'pix'],
+            payment_method_types=['card'],
             line_items=[{
                 'price': price_id,
                 'quantity': 1,
