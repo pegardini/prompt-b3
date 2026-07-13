@@ -2484,7 +2484,7 @@ def comprar():
                 </div>
                 
                 <script>
-                document.getElementById('pix-form').addEventListener('submit', async (e) => {
+                document.getElementById('pix-form').addEventListener('submit', async (e) => {{
                     e.preventDefault();
                     
                     const email = document.getElementById('pix-email').value;
@@ -2492,38 +2492,38 @@ def comprar():
                     const receipt = document.getElementById('pix-receipt').files[0];
                     const statusEl = document.getElementById('pix-status');
                     
-                    if (!email || !plan || !receipt) {
+                    if (!email || !plan || !receipt) {{
                         alert('Por favor, preencha todos os campos!');
                         return;
-                    }
+                    }}
                     
                     const formData = new FormData();
                     formData.append('email', email);
                     formData.append('plan', plan);
                     formData.append('receipt', receipt);
                     
-                    try {
+                    try {{
                         statusEl.textContent = '⏳ Enviando...';
                         statusEl.style.display = 'block';
                         
-                        const response = await fetch('/submit-pix-receipt', {
+                        const response = await fetch('/submit-pix-receipt', {{
                             method: 'POST',
                             body: formData
-                        });
+                        }});
                         
-                        if (response.ok) {
+                        if (response.ok) {{
                             statusEl.textContent = '✅ Comprovante enviado com sucesso! Você receberá sua chave em até 2 horas.';
                             statusEl.style.color = '#00ff00';
                             document.getElementById('pix-form').reset();
-                        } else {
+                        }} else {{
                             statusEl.textContent = '❌ Erro ao enviar. Tente novamente.';
                             statusEl.style.color = '#ff6b6b';
-                        }
-                    } catch (error) {
+                        }}
+                    }} catch (error) {{
                         statusEl.textContent = '❌ Erro de conexão. Tente novamente.';
                         statusEl.style.color = '#ff6b6b';
-                    }
-                });
+                    }}
+                }});
                 </script>
             </div>
             
