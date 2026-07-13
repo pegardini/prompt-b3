@@ -2421,8 +2421,7 @@ def comprar():
                 </div>
                 
                 <!-- Plano Anual -->
-                <div class="card card-destaque" style="text-align: center; border: 3px solid #ffd700; position: relative;">
-                    <div style="position: absolute; top: -15px; right: 20px; background: #ffd700; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">MELHOR VALOR</div>
+                <div class="card card-destaque" style="text-align: center; border: 2px solid rgba(255,215,0,0.3); position: relative;">
                     <h2 style="color: #ffd700; margin-bottom: 10px; margin-top: 10px;">Anual</h2>
                     <h1 style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 180<span style="font-size: 0.6em;">/ano</span></h1>
                     <p style="color: #999; margin-bottom: 30px;"><strong style="color: #ffd700;">Economize R$ 120!</strong> (vs. mensal)</p>
