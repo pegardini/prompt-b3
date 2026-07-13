@@ -1,6 +1,6 @@
-import io, os, random, secrets, string, sqlite3, stripe, time
+import io, os, re, random, secrets, string, sqlite3, stripe, time, threading
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, send_file, redirect, url_for
+from flask import Flask, request, jsonify, send_file, redirect, url_for, Response
 import json
 try:
     from sendgrid import SendGridAPIClient
@@ -1031,11 +1031,11 @@ def relatorio():
     html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">\n'
     html += '<div class="card">\n'
     html += '<h3>📊 Análise de Dividendos</h3>\n'
-    html += '<canvas id="barsiChart"></canvas>\n'
+    html += '<canvas id="dividendosChart"></canvas>\n'
     html += '</div>\n'
     html += '<div class="card">\n'
     html += '<h3>📈 Análise de Qualidade</h3>\n'
-    html += '<canvas id="finclassChart"></canvas>\n'
+    html += '<canvas id="qualidadeChart"></canvas>\n'
     html += '</div>\n'
     html += '</div>\n'
     html += '<h3 style="color: #ffffff; margin-top: 30px; margin-bottom: 15px;">🔍 Filtros Eliminatórios</h3>\n'
@@ -1055,26 +1055,28 @@ def relatorio():
     html += '  const input = document.getElementById("rel-input").value;\n'
     html += '  if (!input.trim()) { alert("Cole a análise primeiro!"); return; }\n'
     html += '  const lines = input.split("\\n");\n'
-    html += '  let barsiScore = 70, finclassScore = 75;\n'
+    html += '  let dividendosScore = 70, qualidadeScore = 75;\n'
     html += '  lines.forEach(line => {\n'
-    html += '    if (line.includes("Dividendos")) barsiScore = Math.random() * 100;\n'
-    html += '    if (line.includes("Qualidade")) finclassScore = Math.random() * 100;\n'
+    html += '    const matchDiv = line.match(/Dividendos[^:]*:\s*(\\d+)/i);\n'
+    html += '    const matchQual = line.match(/Qualidade[^:]*:\s*(\\d+)/i);\n'
+    html += '    if (matchDiv) dividendosScore = Math.min(100, parseFloat(matchDiv[1]));\n'
+    html += '    if (matchQual) qualidadeScore = Math.min(100, parseFloat(matchQual[1]));\n'
     html += '  });\n'
-    html += '  criarGraficos(barsiScore, finclassScore);\n'
+    html += '  criarGraficos(dividendosScore, qualidadeScore);\n'
     html += '  criarTabela();\n'
     html += '}\n'
-    html += 'function criarGraficos(barsi, finclass) {\n'
-    html += '  const ctx1 = document.getElementById("barsiChart").getContext("2d");\n'
+    html += 'function criarGraficos(dividendos, qualidade) {\n'
+    html += '  const ctx1 = document.getElementById("dividendosChart").getContext("2d");\n'
     html += '  new Chart(ctx1, {\n'
     html += '    type: "doughnut",\n'
-    html += '    data: { labels: ["Aprovado", "Reprovado"], datasets: [{ data: [barsi, 100-barsi], backgroundColor: ["#00c853", "#ff3d00"] }] },\n'
-    html += '    options: { responsive: true }\n'
+    html += '    data: { labels: ["Aprovado", "Reprovado"], datasets: [{ data: [dividendos, 100-dividendos], backgroundColor: ["#00c853", "#ff3d00"] }] },\n'
+    html += '    options: { responsive: true, plugins: { legend: { labels: { color: "#fff" } } } }\n'
     html += '  });\n'
-    html += '  const ctx2 = document.getElementById("finclassChart").getContext("2d");\n'
+    html += '  const ctx2 = document.getElementById("qualidadeChart").getContext("2d");\n'
     html += '  new Chart(ctx2, {\n'
     html += '    type: "doughnut",\n'
-    html += '    data: { labels: ["Aprovado", "Reprovado"], datasets: [{ data: [finclass, 100-finclass], backgroundColor: ["#00c853", "#ff3d00"] }] },\n'
-    html += '    options: { responsive: true }\n'
+    html += '    data: { labels: ["Aprovado", "Reprovado"], datasets: [{ data: [qualidade, 100-qualidade], backgroundColor: ["#00c853", "#ff3d00"] }] },\n'
+    html += '    options: { responsive: true, plugins: { legend: { labels: { color: "#fff" } } } }\n'
     html += '  });\n'
     html += '}\n'
     html += 'function criarTabela() {\n'
@@ -1784,6 +1786,15 @@ def submit_lead():
         
         # Send Day 1 email sequence
         send_email_sequence_day1(email)
+        # Schedule day3 and day7 emails in background threads
+        def schedule_day3():
+            time.sleep(3 * 24 * 3600)  # 3 days
+            send_email_sequence_day3(email)
+        def schedule_day7():
+            time.sleep(7 * 24 * 3600)  # 7 days
+            send_email_sequence_day7(email)
+        threading.Thread(target=schedule_day3, daemon=True).start()
+        threading.Thread(target=schedule_day7, daemon=True).start()
         
         # Redirect to thank you page
         return redirect(f'/thank-you?email={email}')
@@ -2655,8 +2666,6 @@ def minha_conta():
 @app.route('/download-prompt')
 def download_prompt():
     """Download prompt .txt with license key already embedded"""
-    import re
-    from flask import Response
     email = request.args.get('email', '').strip()
     if not email:
         return redirect('/minha-conta')
