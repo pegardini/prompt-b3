@@ -26,7 +26,7 @@ def configure_stripe():
     return secret_key
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_B3_v7.md')
+PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_BR_v8.md')
 EBOOK_FILE = os.path.join(BASE_DIR, 'static', 'ebook_prompt_b3.pdf')
 DB_FILE = '/tmp/customers.json'  # fallback only
 LOG_FILE = '/tmp/app_debug.log'
@@ -312,12 +312,12 @@ def update_subscription(email, stripe_customer_id, subscription_id, status):
 
 def send_license_email(email, license_key):
     """Send license key email to customer with prompt attachment"""
-    subject = "🔑 Sua Chave de Licença + Prompt B3"
+    subject = "🔑 Sua Chave de Licença + Prompt de Ações"
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #ffd700; text-align: center;">🎉 Bem-vindo ao Prompt B3!</h2>
+            <h2 style="color: #ffd700; text-align: center;">🎉 Bem-vindo ao Prompt de Ações!</h2>
             
             <p style="color: #333; font-size: 16px;">Olá,</p>
             
@@ -330,7 +330,7 @@ def send_license_email(email, license_key):
             
             <h3 style="color: #333; margin-top: 30px;">📝 Próximos Passos:</h3>
             <ol style="color: #333; font-size: 15px; line-height: 1.8;">
-                <li><strong>Baixe o arquivo em anexo:</strong> PROMPT_MESTRE_HIBRIDO_B3_v7.md</li>
+                <li><strong>Baixe o arquivo em anexo:</strong> PROMPT_MESTRE_HIBRIDO_BR_v8.md</li>
                 <li>Abra ChatGPT, Claude ou Gemini</li>
                 <li>Cole o conteúdo do arquivo no chat</li>
                 <li>Cole sua chave de licença quando solicitado</li>
@@ -346,7 +346,7 @@ def send_license_email(email, license_key):
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             
-            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt de Ações. Todos os direitos reservados.</p>
         </div>
     </body>
     </html>
@@ -422,7 +422,7 @@ footer { background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,215,
 
 NAV = """
 <nav>
-    <a href="/" class="logo">📈 Prompt B3</a>
+    <a href="/" class="logo">📈 Prompt de Ações</a>
     <div class="nav-links">
         <a href="/">Home</a>
         <a href="/trial">Teste 7 Dias</a>
@@ -436,7 +436,7 @@ NAV = """
 FOOTER = """
 <footer style="background: #1a2332; border-top: 1px solid rgba(255,215,0,0.2); padding: 30px 20px; margin-top: 60px;">
     <div style="max-width: 1200px; margin: 0 auto;">
-        <p>&copy; 2026 Prompt Fundamentalista B3 | promptpegardini@gmail.com</p>
+        <p>&copy; 2026 Prompt Fundamentalista de Ações | promptpegardini@gmail.com</p>
         <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚠️ Aviso de Independência:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado ou endossado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
         <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚖️ Aviso Legal:</strong> Este produto é um prompt de IA para fins educacionais exclusivamente. Não constitui recomendação, aconselhamento ou sugestão de investimento. A IA pode cometer erros. Sempre verifique informações em fontes oficiais e consulte especialistas antes de tomar decisões financeiras.</p>
         <p style="font-size: 0.85em; margin-top: 10px;"><strong>🤖 Sobre IA:</strong> ChatGPT, Claude e Gemini são marcas de seus respectivos titulares. Este produto não possui afiliação, patrocínio ou endosso dessas plataformas.</p>
@@ -447,26 +447,26 @@ FOOTER = """
 
 @app.route('/')
 def home():
-    """Home page - Prompt B3 propaganda and features"""
+    """Home page - Prompt de Ações propaganda and features"""
     html = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Prompt Fundamentalista B3</title>
+        <title>Prompt Fundamentalista de Ações</title>
         <style>{CSS}</style>
     </head>
     <body>
         {NAV}
         <div class="container">
-            <h1>📈 Prompt Fundamentalista B3</h1>
+            <h1>📈 Prompt Fundamentalista de Ações</h1>
             <div class="card" style="background: rgba(255,100,0,0.1); border: 1px solid rgba(255,100,0,0.3); margin-bottom: 30px;">
                 <strong style="color: #ff9800;">⚠️ Projeto Independente:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado ou endossado por terceiros. Este produto oferece duas abordagens complementares: <b>Análise com Foco em Dividendos</b> e <b>Análise com Foco em Qualidade</b>. Ambas utilizam princípios de análise fundamentalista amplamente documentados na literatura financeira. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.
             </div>
             
             <div class="card card-destaque" style="text-align: center; padding: 50px 30px; margin-bottom: 40px;">
-                <p style="font-size: 1.3em; margin-bottom: 15px; color: #ffd700; font-weight: bold;">Análise Inteligente de Ações B3 com IA</p>
+                <p style="font-size: 1.3em; margin-bottom: 15px; color: #ffd700; font-weight: bold;">Análise Inteligente de Ações do Mercado Financeiro com IA</p>
                 <p style="font-size: 1.1em; margin-bottom: 30px; color: #ccc;">Análise Fundamentalista Híbrida | Funciona com ChatGPT, Claude e Gemini</p>
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                     <a href="/trial" class="btn btn-gold" style="padding: 16px 40px; font-size: 1.1em; text-decoration: none;">📥 Teste 7 Dias Grátis</a>
@@ -491,7 +491,7 @@ def home():
                 <div class="card" style="text-align: center;">
                     <p style="font-size: 2em; margin-bottom: 10px;">📊</p>
                     <h3>Análise Completa</h3>
-                    <p>Análise Qualidade + Dividendos + Veredito</p>
+                    <p>Análise Qualidade + Dividendos + Resumo da Análise</p>
                 </div>
                 <div class="card" style="text-align: center;">
                     <p style="font-size: 2em; margin-bottom: 10px;">🎨</p>
@@ -658,7 +658,7 @@ def trial():
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,215,0,0.2);">
                     <h3>✅ O que você recebe:</h3>
                     <ul>
-                        <li>✅ Prompt Fundamentalista B3 completo</li>
+                        <li>✅ Prompt Fundamentalista de Ações completo</li>
                         <li>✅ Chave de licença válida por 7 dias</li>
                         <li>✅ Acesso ao Análise</li>
                         <li>✅ Exportação em Markdown e PDF</li>
@@ -849,7 +849,7 @@ def success():
                 <div class="card" style="background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.3);">
                     <h3>🎉 Você tem acesso a:</h3>
                     <ul>
-                        <li>✅ Prompt Fundamentalista B3 completo</li>
+                        <li>✅ Prompt Fundamentalista de Ações completo</li>
                         <li>✅ Análise com gráficos</li>
                         <li>✅ Exportação em Markdown e PDF</li>
                         <li>✅ Suporte por email</li>
@@ -1226,7 +1226,7 @@ def dashboard():
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>📊 Dashboard - Prompt B3</title>
+            <title>📊 Dashboard - Prompt de Ações</title>
             <style>
                 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
                 body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; padding: 20px; }}
@@ -1256,7 +1256,7 @@ def dashboard():
             <div class="container">
                 <div class="header">
                     <h1>📊 Seu Dashboard</h1>
-                    <p>Gerencie sua assinatura do Prompt B3</p>
+                    <p>Gerencie sua assinatura do Prompt de Ações</p>
                 </div>
                 
                 <div class="card">
@@ -1280,7 +1280,7 @@ def dashboard():
                     <div class="key-box">
                         <p class="key-text">{license_key}</p>
                     </div>
-                    <p style="color: #aaa; font-size: 0.9em; margin-top: 10px;">Use esta chave ao usar o Prompt B3 no ChatGPT, Claude ou Gemini.</p>
+                    <p style="color: #aaa; font-size: 0.9em; margin-top: 10px;">Use esta chave ao usar o Prompt de Ações no ChatGPT, Claude ou Gemini.</p>
                 </div>
                 
                 <div class="card">
@@ -1321,7 +1321,7 @@ def dashboard():
                 }}
                 
                 function cancelSubscription() {{
-                    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso ao Prompt B3.')) {{
+                    if (!confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso ao Prompt de Ações.')) {{
                         return;
                     }}
                     
@@ -1408,7 +1408,7 @@ def send_cancellation_email(email):
             
             <p style="color: #333; font-size: 16px;">Olá,</p>
             
-            <p style="color: #333; font-size: 16px;">Sua assinatura do Prompt B3 foi cancelada com sucesso.</p>
+            <p style="color: #333; font-size: 16px;">Sua assinatura do Prompt de Ações foi cancelada com sucesso.</p>
             
             <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #ef4444; margin: 20px 0;">
                 <p style="color: #666; font-size: 14px; margin: 0;"><strong>Data do Cancelamento:</strong> {datetime.utcnow().strftime('%d/%m/%Y %H:%M')}</p>
@@ -1430,7 +1430,7 @@ def send_cancellation_email(email):
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             
-            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt de Ações. Todos os direitos reservados.</p>
         </div>
     </body>
     </html>
@@ -1502,7 +1502,7 @@ def admin_dashboard():
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>📊 Admin Dashboard - Prompt B3</title>
+            <title>📊 Admin Dashboard - Prompt de Ações</title>
             <style>
                 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
                 body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; padding: 20px; }}
@@ -1526,7 +1526,7 @@ def admin_dashboard():
             <div class="container">
                 <div class="header">
                     <h1>📊 Admin Dashboard</h1>
-                    <p>Relatório de Vendas e Clientes - Prompt B3</p>
+                    <p>Relatório de Vendas e Clientes - Prompt de Ações</p>
                 </div>
                 
                 <div class="stats">
@@ -1827,7 +1827,7 @@ def thank_you():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Obrigado! - Prompt B3</title>
+        <title>Obrigado! - Prompt de Ações</title>
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
             body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #0a0f1e 0%, #1a2332 100%); color: #ffffff; min-height: 100vh; padding: 20px; }}
@@ -1868,11 +1868,11 @@ def thank_you():
             <!-- CTA Section -->
             <div class="cta-section">
                 <h2>🚀 Pronto para Análises Profissionais?</h2>
-                <p>O ebook é apenas o começo. O <strong>Prompt B3 Completo</strong> oferece:</p>
+                <p>O ebook é apenas o começo. O <strong>Prompt de Ações Completo</strong> oferece:</p>
                 
                 <div class="features">
                     <div class="feature">
-                        <p>✅ <strong>Análise Completa</strong><br/>Qualidade + Dividendos + Veredito</p>
+                        <p>✅ <strong>Análise Completa</strong><br/>Qualidade + Dividendos + Resumo da Análise</p>
                     </div>
                     <div class="feature">
                         <p>✅ <strong>Análise</strong><br/>Gráficos coloridos e profissionais</p>
@@ -1895,7 +1895,7 @@ def thank_you():
             
             <!-- Testimonial -->
             <div class="testimonial">
-                "Depois de usar o Prompt B3, minha análise de ações ficou muito mais rápida e precisa. Recomendo!" — João, Investidor
+                "Depois de usar o Prompt de Ações, minha análise de ações ficou muito mais rápida e precisa. Recomendo!" — João, Investidor
             </div>
             
             <!-- Next Steps -->
@@ -1916,12 +1916,12 @@ def thank_you():
 
 def send_email_sequence_day1(email):
     """Send Day 1 email: Welcome + CTA to try free"""
-    subject = "🚀 Comece Agora: Teste 7 Dias Grátis do Prompt B3"
+    subject = "🚀 Comece Agora: Teste 7 Dias Grátis do Prompt de Ações"
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #ffd700; text-align: center;">🚀 Bem-vindo ao Prompt B3!</h2>
+            <h2 style="color: #ffd700; text-align: center;">🚀 Bem-vindo ao Prompt de Ações!</h2>
             
             <p style="color: #333; font-size: 16px;">Olá,</p>
             
@@ -1935,14 +1935,14 @@ def send_email_sequence_day1(email):
             
             <h3 style="color: #333; margin-top: 30px;">✅ O que você terá acesso:</h3>
             <ul style="color: #333; font-size: 15px; line-height: 1.8;">
-                <li>✓ Prompt B3 Completo</li>
+                <li>✓ Prompt de Ações Completo</li>
                 <li>✓ Análise de até 10 ações</li>
                 <li>✓ Relatórios visuais em PDF</li>
                 <li>✓ Suporte por email</li>
             </ul>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt de Ações. Todos os direitos reservados.</p>
         </div>
     </body>
     </html>
@@ -1952,7 +1952,7 @@ def send_email_sequence_day1(email):
 
 def send_email_sequence_day3(email):
     """Send Day 3 email: Success stories + pricing"""
-    subject = "💡 Veja Como Outros Estão Usando o Prompt B3"
+    subject = "💡 Veja Como Outros Estão Usando o Prompt de Ações"
     html_content = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
@@ -1961,7 +1961,7 @@ def send_email_sequence_day3(email):
             
             <p style="color: #333; font-size: 16px;">Olá,</p>
             
-            <p style="color: #333; font-size: 16px;">Vários usuários já estão usando o Prompt B3 para análises profissionais. Veja alguns resultados:</p>
+            <p style="color: #333; font-size: 16px;">Vários usuários já estão usando o Prompt de Ações para análises profissionais. Veja alguns resultados:</p>
             
             <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #4ade80; margin: 20px 0;">
                 <p style="color: #333; font-size: 14px; margin: 0;"><strong>"Reduzi meu tempo de análise de 2 horas para 15 minutos!"</strong></p>
@@ -1994,7 +1994,7 @@ def send_email_sequence_day3(email):
             </div>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt de Ações. Todos os direitos reservados.</p>
         </div>
     </body>
     </html>
@@ -2024,7 +2024,7 @@ def send_email_sequence_day7(email):
             <p style="color: #333; font-size: 15px; margin-top: 20px;">Não deixe passar essa oportunidade!</p>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt de Ações. Todos os direitos reservados.</p>
         </div>
     </body>
     </html>
@@ -2043,7 +2043,7 @@ def send_lead_magnet_email(email, question=''):
             
             <p style="color: #333; font-size: 16px;">Olá,</p>
             
-            <p style="color: #333; font-size: 16px;">Obrigado por se interessar no <strong>Prompt Fundamentalista B3</strong>!</p>
+            <p style="color: #333; font-size: 16px;">Obrigado por se interessar no <strong>Prompt Fundamentalista de Ações</strong>!</p>
             
             <p style="color: #333; font-size: 16px;">Em anexo, você encontra nosso guia introdutório com os fundamentos de duas <strong>Análises Complementares: Qualidade e Dividendos</strong> em 10 páginas práticas.</p>
             
@@ -2062,13 +2062,13 @@ def send_lead_magnet_email(email, question=''):
             <ol style="color: #333; font-size: 15px; line-height: 1.8;">
                 <li>Escolher uma ação para analisar</li>
                 <li>Coletar dados financeiros</li>
-                <li>Usar o Prompt B3 para análise completa</li>
+                <li>Usar o Prompt de Ações para análise completa</li>
                 <li>Tomar decisões informadas</li>
             </ol>
             
             <div style="background-color: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700;">
                 <p style="color: #333; font-size: 14px; margin: 0;"><strong>💡 Quer aprofundar ainda mais?</strong></p>
-                <p style="color: #333; font-size: 14px; margin: 10px 0 0 0;">Conheça nossos planos premium com acesso ao Prompt B3 completo, atualizações constantes e suporte por email.</p>
+                <p style="color: #333; font-size: 14px; margin: 10px 0 0 0;">Conheça nossos planos premium com acesso ao Prompt de Ações completo, atualizações constantes e suporte por email.</p>
             </div>
             
             <h3 style="color: #333; margin-top: 30px;">❓ Dúvidas?</h3>
@@ -2076,7 +2076,7 @@ def send_lead_magnet_email(email, question=''):
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             
-            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt B3. Todos os direitos reservados.</p>
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">© 2026 Prompt de Ações. Todos os direitos reservados.</p>
         </div>
     </body>
     </html>
@@ -2134,7 +2134,7 @@ def comprar():
         {NAV}
         <div class="container">
             <h1>💳 Escolha seu Plano</h1>
-            <p style="text-align: center; margin-bottom: 40px; font-size: 1.1em;">Acesso completo ao Prompt Fundamentalista B3 com atualizações constantes</p>
+            <p style="text-align: center; margin-bottom: 40px; font-size: 1.1em;">Acesso completo ao Prompt Fundamentalista de Ações com atualizações constantes</p>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 0 auto;">
                 <!-- Plano Mensal -->
@@ -2253,7 +2253,7 @@ def analytics_dashboard():
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>📊 Analytics Dashboard - Prompt B3</title>
+            <title>📊 Analytics Dashboard - Prompt de Ações</title>
             <style>
                 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
                 body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0a0f1e; color: #ffffff; min-height: 100vh; padding: 20px; }}
@@ -2435,7 +2435,7 @@ def terms():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Termos de Uso - Prompt B3</title>
+        <title>Termos de Uso - Prompt de Ações</title>
         <style>{CSS}</style>
     </head>
     <body>
@@ -2658,7 +2658,7 @@ def minha_conta():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Minha Conta - Prompt B3</title>
+        <title>Minha Conta - Prompt de Ações</title>
         <style>{CSS}</style>
     </head>
     <body>
@@ -2695,7 +2695,7 @@ def download_prompt():
             pass
     # Load prompt master file
     try:
-        with open('PROMPT_MESTRE_HIBRIDO_B3_v7.md', 'r', encoding='utf-8') as f:
+        with open('PROMPT_MESTRE_HIBRIDO_BR_v8.md', 'r', encoding='utf-8') as f:
             prompt_text = f.read()
     except:
         prompt_text = prompt_com_chave(license_key)
