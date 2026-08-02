@@ -14,8 +14,8 @@ app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
 # Stripe configuration - lazy loading (read at request time, not at module load time)
 STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
-PRICE_MONTHLY = os.environ.get('PRICE_MONTHLY', 'price_1Tsn1CBcwD1zxuENx6qkb5Kp')
-PRICE_ANNUAL = os.environ.get('PRICE_ANNUAL', 'price_1Tsn1DBcwD1zxuEN9LPPAIwG')
+PRICE_MONTHLY = 'price_1Tsn1CBcwD1zxuENx6qkb5Kp'
+PRICE_ANNUAL = 'price_1Tsn1DBcwD1zxuEN9LPPAIwG'
 
 def configure_stripe():
     """Configure Stripe API key from environment variables (lazy loading)"""
@@ -261,7 +261,7 @@ def create_customer(email, license_key, trial_expiry=None, stripe_customer_id=No
     }
     save_customers(customers)
 
-def update_subscription(email, stripe_customer_id, subscription_id, status, plan='monthly'):
+def update_subscription(email, stripe_customer_id, subscription_id, status):
     """Update subscription in JSON file and generate license key"""
     try:
         log_debug(f"update_subscription called for {email}")
@@ -305,21 +305,13 @@ def update_subscription(email, stripe_customer_id, subscription_id, status, plan
         log_debug(f"Successfully saved customer: {email}")
         
         # Send welcome email with license key
-        send_license_email(email, license_key, plan)
+        send_license_email(email, license_key)
     except Exception as e:
         log_debug(f"ERROR in update_subscription: {str(e)}")
         raise
 
-def send_license_email(email, license_key, plan='monthly'):
-    """Send license key email to customer with prompt attachment based on plan"""
-    # Determine which prompt file to send based on plan
-    if plan == 'annual':
-        prompt_file = os.path.join(BASE_DIR, 'PROMPT_COMPLETO_1ANO.md')
-        plan_name = "Plano Anual - Versão Completa"
-    else:
-        prompt_file = os.path.join(BASE_DIR, 'PROMPT_LITE_7DIAS.md')
-        plan_name = "Plano Mensal - Versão Lite"
-    
+def send_license_email(email, license_key):
+    """Send license key email to customer with prompt attachment"""
     subject = "🔑 Sua Chave de Licença + Prompt B3"
     html_content = f"""
     <html>
@@ -334,12 +326,11 @@ def send_license_email(email, license_key, plan='monthly'):
             <div style="background-color: #0a0f1e; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700;">
                 <p style="color: #ffd700; font-size: 14px; margin: 0; text-align: center;">Sua Chave de Licença:</p>
                 <p style="color: #ffffff; font-size: 18px; font-weight: bold; margin: 10px 0; text-align: center; font-family: monospace;">{license_key}</p>
-                <p style="color: #ffd700; font-size: 12px; margin: 10px 0; text-align: center;">{plan_name}</p>
             </div>
             
             <h3 style="color: #333; margin-top: 30px;">📝 Próximos Passos:</h3>
             <ol style="color: #333; font-size: 15px; line-height: 1.8;">
-                <li><strong>Baixe o arquivo em anexo:</strong> Seu Prompt B3 ({plan_name})</li>
+                <li><strong>Baixe o arquivo em anexo:</strong> PROMPT_MESTRE_HIBRIDO_B3_v7.md</li>
                 <li>Abra ChatGPT, Claude ou Gemini</li>
                 <li>Cole o conteúdo do arquivo no chat</li>
                 <li>Cole sua chave de licença quando solicitado</li>
@@ -360,7 +351,7 @@ def send_license_email(email, license_key, plan='monthly'):
     </body>
     </html>
     """
-    send_email_with_attachment(email, subject, html_content, prompt_file)
+    send_email_with_attachment(email, subject, html_content, PROMPT_FILE)
 
 def send_email_with_attachment(to_email, subject, html_content, attachment_path):
     """Send email with file attachment using SendGrid"""
@@ -436,7 +427,6 @@ NAV = """
         <a href="/">Home</a>
         <a href="/trial">Teste 7 Dias</a>
         <a href="/comprar">Comprar 1 Ano</a>
-        <a href="/relatorio">Relatório Visual</a>
         <a href="/minha-conta" style="color: #ffd700; font-weight: bold;">👤 Minha Conta</a>
         <a href="/contato">Contato</a>
     </div>
@@ -505,7 +495,7 @@ def home():
                 </div>
                 <div class="card" style="text-align: center;">
                     <p style="font-size: 2em; margin-bottom: 10px;">🎨</p>
-                    <h3>Relatório Visual</h3>
+                    <h3>Análise</h3>
                     <p>Gráficos coloridos e profissionais</p>
                 </div>
                 <div class="card" style="text-align: center;">
@@ -527,7 +517,7 @@ def home():
                 </div>
                 <div class="card">
                     <h3>3️⃣ Veja o Relatório</h3>
-                    <p>Copie a resposta, vá em "Relatório Visual" e gere gráficos profissionais</p>
+                    <p>Copie a resposta, vá em "Análise" e gere gráficos profissionais</p>
                 </div>
             </div>
 
@@ -546,7 +536,7 @@ def home():
             </div>
             <div class="card">
                 <h3>📊 Posso exportar o relatório em PDF?</h3>
-                <p>Sim! Na página "Relatório Visual", clique em "Imprimir / Salvar PDF" para gerar um PDF profissional.</p>
+                <p>Sim! Na página "Análise", clique em "Imprimir / Salvar PDF" para gerar um PDF profissional.</p>
             </div>
 
             <h2 style="text-align: center; margin: 60px 0 30px;">📚 Ganhe um Ebook Gratuito</h2>
@@ -621,7 +611,7 @@ def trial():
                         <li>Abra ChatGPT, Claude ou Gemini</li>
                         <li>Cole o prompt completo</li>
                         <li>Peça análise de uma ação (ex: "Analise PETR4")</li>
-                        <li>Copie a resposta e vá em "Relatório Visual" para gerar gráficos</li>
+                        <li>Copie a resposta e vá em "Análise" para gerar gráficos</li>
                     </ol>
                 </div>
                 <div class="card" style="background: rgba(0,200,83,0.08); border: 2px solid rgba(0,200,83,0.3);">
@@ -670,7 +660,7 @@ def trial():
                     <ul>
                         <li>✅ Prompt Fundamentalista B3 completo</li>
                         <li>✅ Chave de licença válida por 7 dias</li>
-                        <li>✅ Acesso ao Relatório Visual</li>
+                        <li>✅ Acesso ao Análise</li>
                         <li>✅ Exportação em Markdown e PDF</li>
                     </ul>
                 </div>
@@ -710,7 +700,6 @@ def subscribe():
                 mode='subscription',
                 success_url=f'{request.host_url}success?session_id={{CHECKOUT_SESSION_ID}}',
                 cancel_url=f'{request.host_url}subscribe',
-                locale='pt-BR',
             )
             
             # Save customer to database
@@ -721,7 +710,6 @@ def subscribe():
             return f"Erro ao criar sessão: {str(e)}", 500
     
     # GET request - show form
-    pix_key = "c3b011ff-1c68-4312-a14e-9654ba144575"
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -729,172 +717,53 @@ def subscribe():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Assinar Agora</title>
-        <style>{CSS}
-        .payment-method {{
-            background: #1a2332;
-            border: 2px solid rgba(255,215,0,0.3);
-            border-radius: 12px;
-            padding: 30px;
-            margin: 20px auto;
-            max-width: 600px;
-        }}
-        .payment-method.active {{
-            border-color: #ffd700;
-            background: rgba(255,215,0,0.05);
-        }}
-        .payment-tabs {{
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            justify-content: center;
-        }}
-        .payment-tab {{
-            padding: 12px 30px;
-            border: 2px solid rgba(255,215,0,0.3);
-            background: transparent;
-            color: #fff;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s;
-        }}
-        .payment-tab.active {{
-            background: #ffd700;
-            color: #000;
-            border-color: #ffd700;
-        }}
-        .payment-content {{
-            display: none;
-        }}
-        .payment-content.active {{
-            display: block;
-        }}
-        .qr-container {{
-            text-align: center;
-            margin: 20px 0;
-        }}
-        .qr-container img {{
-            width: 200px;
-            height: 200px;
-            border: 3px solid #ffd700;
-            border-radius: 8px;
-            padding: 10px;
-            background: white;
-        }}
-        .pix-key {{
-            background: #0f1419;
-            padding: 15px;
-            border-radius: 8px;
-            word-break: break-all;
-            font-family: monospace;
-            color: #ffd700;
-            margin: 15px 0;
-            font-size: 0.9em;
-        }}
-        .copy-btn {{
-            background: #ffd700;
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 10px;
-        }}
-        .copy-btn:hover {{
-            background: #ffed4e;
-        }}
-        </style>
+        <style>{CSS}</style>
     </head>
     <body>
         {NAV}
         <div class="container">
-            <h1>💳 Escolha Seu Plano e Forma de Pagamento</h1>
+            <h1>💳 Escolha Seu Plano</h1>
             
-            <!-- Abas de Pagamento -->
-            <div class="payment-tabs">
-                <button class="payment-tab active" onclick="switchPayment('cartao')">💳 Cartão de Crédito</button>
-                <button class="payment-tab" onclick="switchPayment('pix')">📱 PIX</button>
-            </div>
-            
-            <!-- Método: Cartão -->
-            <div id="cartao" class="payment-content active">
-                <div class="payment-method">
-                    <h2>💳 Pagar com Cartão de Crédito</h2>
-                    <p style="color: #ccc; margin-bottom: 30px;">Pagamento seguro via Stripe. Receba sua chave instantaneamente.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 0 auto;">
+                <!-- Plano Mensal -->
+                <div class="card card-destaque" style="text-align: center;">
+                    <h2>📅 Mensal</h2>
+                    <p style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 25<span style="font-size: 0.5em;">/mês</span></p>
+                    <p style="color: #ccc; margin-bottom: 30px;">Acesso completo por 1 mês</p>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <!-- Mensal -->
-                        <div class="card" style="text-align: center;">
-                            <h3>📅 Mensal</h3>
-                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 25/mês</p>
-                            <form method="POST" style="margin-bottom: 20px;">
-                                <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f1419; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff;">
-                                <input type="hidden" name="plan" value="monthly">
-                                <button type="submit" class="btn btn-gold" style="width: 100%; padding: 12px;">Comprar com Cartão</button>
-                            </form>
-                        </div>
-                        
-                        <!-- Anual -->
-                        <div class="card" style="text-align: center; border: 2px solid #ffd700;">
-                            <div style="background: #ffd700; color: #000; padding: 6px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; font-size: 0.9em;">MELHOR VALOR</div>
-                            <h3>📆 Anual</h3>
-                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 180/ano</p>
-                            <p style="font-size: 0.9em; color: #90ee90; margin-bottom: 15px;">💰 Economize R$ 120!</p>
-                            <form method="POST" style="margin-bottom: 20px;">
-                                <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f1419; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff;">
-                                <input type="hidden" name="plan" value="annual">
-                                <button type="submit" class="btn btn-gold" style="width: 100%; padding: 12px;">Comprar com Cartão</button>
-                            </form>
-                        </div>
-                    </div>
+                    <form method="POST" style="margin-bottom: 20px;">
+                        <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 12px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
+                        <input type="hidden" name="plan" value="monthly">
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px;">Assinar Mensal</button>
+                    </form>
+                    
+                    <ul style="text-align: left; font-size: 0.9em;">
+                        <li>✅ Prompt completo</li>
+                        <li>✅ Análise</li>
+                        <li>✅ Exportação MD/PDF</li>
+                        <li>✅ Suporte por email</li>
+                    </ul>
                 </div>
-            </div>
-            
-            <!-- Método: PIX -->
-            <div id="pix" class="payment-content">
-                <div class="payment-method">
-                    <h2>📱 Pagar com PIX</h2>
-                    <p style="color: #ccc; margin-bottom: 30px;">Escaneie o QR Code ou copie a chave PIX. Após pagar, envie o comprovante para ativar sua chave.</p>
+                
+                <!-- Plano Anual -->
+                <div class="card card-destaque" style="text-align: center; border: 2px solid #ffd700;">
+                    <div style="background: #ffd700; color: #000; padding: 8px; border-radius: 8px; margin-bottom: 15px; font-weight: bold;">MELHOR CUSTO-BENEFÍCIO</div>
+                    <h2>📆 Anual</h2>
+                    <p style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 180<span style="font-size: 0.5em;">/ano</span></p>
+                    <p style="color: #ccc; margin-bottom: 30px;">Acesso completo por 1 ano</p>
                     
-                    <div style="background: #0f1419; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid rgba(255,215,0,0.3);">
-                        <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px;">📧 Seu Email (para receber a chave):</label>
-                        <input type="email" id="pix-email" placeholder="seu@email.com" style="width: 100%; padding: 12px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
-                        <p style="color: #999; font-size: 0.85em; margin-top: 8px;">💡 Dica: Copie este email junto com o comprovante ao enviar para promptpegardini@gmail.com</p>
-                    </div>
+                    <form method="POST" style="margin-bottom: 20px;">
+                        <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 12px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
+                        <input type="hidden" name="plan" value="annual">
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px;">Assinar Anual</button>
+                    </form>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <!-- Mensal PIX -->
-                        <div class="card" style="text-align: center;">
-                            <h3>📅 Mensal</h3>
-                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 25</p>
-                            <div class="qr-container">
-                                <img src="/static/qr_mensal.png" alt="QR Code PIX Mensal">
-                            </div>
-                            <p style="color: #999; font-size: 0.9em; margin: 15px 0;">Ou copie a chave:</p>
-                            <div class="pix-key">{pix_key}</div>
-                            <button class="copy-btn" onclick="copyToClipboard('{pix_key}')">📋 Copiar Chave PIX</button>
-                        </div>
-                        
-                        <!-- Anual PIX -->
-                        <div class="card" style="text-align: center; border: 2px solid #ffd700;">
-                            <div style="background: #ffd700; color: #000; padding: 6px; border-radius: 6px; margin-bottom: 10px; font-weight: bold; font-size: 0.9em;">MELHOR VALOR</div>
-                            <h3>📆 Anual</h3>
-                            <p style="font-size: 2em; color: #ffd700; margin: 15px 0;">R$ 180</p>
-                            <p style="font-size: 0.9em; color: #90ee90; margin-bottom: 15px;">💰 Economize R$ 120!</p>
-                            <div class="qr-container">
-                                <img src="/static/qr_anual.png" alt="QR Code PIX Anual">
-                            </div>
-                            <p style="color: #999; font-size: 0.9em; margin: 15px 0;">Ou copie a chave:</p>
-                            <div class="pix-key">{pix_key}</div>
-                            <button class="copy-btn" onclick="copyToClipboard('{pix_key}')">📋 Copiar Chave PIX</button>
-                        </div>
-                    </div>
-                    
-                    <div style="background: rgba(255,215,0,0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 15px; margin-top: 20px; text-align: center;">
-                        <p style="color: #ffd700; font-weight: bold; margin-bottom: 10px;">⏱️ Próximos Passos:</p>
-                        <p style="color: #ccc; font-size: 0.95em;">1. Preencha seu email acima<br>2. Escaneie ou copie a chave PIX<br>3. Realize o pagamento em seu banco<br>4. Envie o comprovante + seu email para <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a><br>5. Sua chave será ativada em até 2 horas</p>
-                    </div>
+                    <ul style="text-align: left; font-size: 0.9em;">
+                        <li>✅ Tudo do plano mensal</li>
+                        <li>✅ Economize 40%</li>
+                        <li>✅ Acesso por 12 meses</li>
+                        <li>✅ Prioridade no suporte</li>
+                    </ul>
                 </div>
             </div>
             
@@ -903,30 +772,6 @@ def subscribe():
                 <p>Entre em contato conosco em <a href="mailto:promptpegardini@gmail.com" style="color: #ffd700;">promptpegardini@gmail.com</a></p>
             </div>
         </div>
-        
-        <script>
-        function switchPayment(method) {{
-            // Esconder todos os conteúdos
-            document.getElementById('cartao').classList.remove('active');
-            document.getElementById('pix').classList.remove('active');
-            
-            // Remover ativo de todos os botões
-            document.querySelectorAll('.payment-tab').forEach(btn => btn.classList.remove('active'));
-            
-            // Mostrar o selecionado
-            document.getElementById(method).classList.add('active');
-            event.target.classList.add('active');
-        }}
-        
-        function copyToClipboard(text) {{
-            navigator.clipboard.writeText(text).then(() => {{
-                alert('✅ Chave PIX copiada para a área de transferência!');
-            }}).catch(() => {{
-                alert('Erro ao copiar. Copie manualmente: ' + text);
-            }});
-        }}
-        </script>
-        
         {FOOTER}
     </body>
     </html>
@@ -945,19 +790,11 @@ def success():
         session = stripe.checkout.Session.retrieve(session_id)
         customer_email = session.customer_details.email
         subscription_id = session.subscription
-        
-        # Determine plan based on price_id
-        plan = 'monthly'
-        if session.line_items:
-            for item in session.line_items.data:
-                if item.price.id == PRICE_ANNUAL:
-                    plan = 'annual'
-                    break
         log_debug(f"Retrieved session for email: {customer_email}")
         
         # Update customer in database
         log_debug(f"Calling update_subscription for {customer_email}")
-        update_subscription(customer_email, session.customer, subscription_id, 'active', plan)
+        update_subscription(customer_email, session.customer, subscription_id, 'active')
         log_debug(f"update_subscription completed")
         
         # Get license key with retry logic (webhook may not have processed yet)
@@ -1013,7 +850,7 @@ def success():
                     <h3>🎉 Você tem acesso a:</h3>
                     <ul>
                         <li>✅ Prompt Fundamentalista B3 completo</li>
-                        <li>✅ Relatório Visual com gráficos</li>
+                        <li>✅ Análise com gráficos</li>
                         <li>✅ Exportação em Markdown e PDF</li>
                         <li>✅ Suporte por email</li>
                         <li>✅ Atualizações automáticas</li>
@@ -1274,104 +1111,6 @@ def get_prompt(chave):
         download_name='Prompt_Fundamentalista_B3.txt'
     )
 
-@app.route('/relatorio')
-def relatorio():
-    html = '<!DOCTYPE html>\n<html>\n<head>\n'
-    html += '<meta charset="UTF-8">\n'
-    html += '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
-    html += '<title>Relatório Visual</title>\n'
-    html += '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\n'
-    html += '<style>' + CSS + '</style>\n'
-    html += '</head>\n<body>\n'
-    html += NAV
-    html += '<div class="container">\n'
-    html += '<h1>📊 Relatório Visual</h1>\n'
-    html += '<div class="card" style="background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.3); margin-bottom: 20px;">\n'
-    html += '<p>Cole aqui o texto completo da análise gerada pela IA:</p>\n'
-    html += '<textarea id="rel-input" placeholder="Cole a análise completa aqui..." style="width: 100%; height: 300px; background: #1a2332; color: #ffffff; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; padding: 15px; font-family: monospace; font-size: 0.95em; resize: vertical;"></textarea>\n'
-    html += '<div style="display: flex; gap: 10px; margin-top: 15px;">\n'
-    html += '<button class="btn btn-gold" onclick="gerarRelatorio()" style="flex: 1;">✨ Gerar Relatório Visual</button>\n'
-    html += '<button class="btn btn-red" onclick="limparTudo()" style="flex: 1;">🗑️ Limpar Tudo</button>\n'
-    html += '</div>\n'
-    html += '</div>\n'
-    html += '<div id="rel-output" class="rel-output" style="display: block;">\n'
-    html += '<div style="display: flex; gap: 10px; margin-bottom: 20px;">\n'
-    html += '<button class="btn btn-gold" onclick="window.print()" style="flex: 1;">🖨️ Imprimir / Salvar PDF</button>\n'
-    html += '<button class="btn btn-blue" onclick="downloadRelatorioMD()" style="flex: 1; background: linear-gradient(135deg, #2196f3, #1976d2);">📄 Exportar como MD</button>\n'
-    html += '</div>\n'
-    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">\n'
-    html += '<div class="card">\n'
-    html += '<h3>📊 Análise de Dividendos</h3>\n'
-    html += '<canvas id="dividendosChart"></canvas>\n'
-    html += '</div>\n'
-    html += '<div class="card">\n'
-    html += '<h3>📈 Análise de Qualidade</h3>\n'
-    html += '<canvas id="qualidadeChart"></canvas>\n'
-    html += '</div>\n'
-    html += '</div>\n'
-    html += '<h3 style="color: #ffffff; margin-top: 30px; margin-bottom: 15px;">🔍 Filtros Eliminatórios</h3>\n'
-    html += '<table class="filters-table" id="filtersTable" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;"></table>\n'
-    html += '<div id="analysisBlocks"></div>\n'
-    html += '<div id="summarySection"></div>\n'
-    html += '</div>\n'
-    html += '</div>\n'
-    
-    html += '<script>\n'
-    html += 'function gerarAsciiChart(score, label) {\n'
-    html += '  const filled = Math.round(score / 10);\n'
-    html += '  const empty = 10 - filled;\n'
-    html += '  return "█".repeat(filled) + "░".repeat(empty) + " " + score + "%";\n'
-    html += '}\n'
-    html += 'function gerarRelatorio() {\n'
-    html += '  const input = document.getElementById("rel-input").value;\n'
-    html += '  if (!input.trim()) { alert("Cole a análise primeiro!"); return; }\n'
-    html += '  const lines = input.split("\\n");\n'
-    html += '  let dividendosScore = 70, qualidadeScore = 75;\n'
-    html += '  lines.forEach(line => {\n'
-    html += '    const matchDiv = line.match(/Dividendos[^:]*:\s*(\\d+)/i);\n'
-    html += '    const matchQual = line.match(/Qualidade[^:]*:\s*(\\d+)/i);\n'
-    html += '    if (matchDiv) dividendosScore = Math.min(100, parseFloat(matchDiv[1]));\n'
-    html += '    if (matchQual) qualidadeScore = Math.min(100, parseFloat(matchQual[1]));\n'
-    html += '  });\n'
-    html += '  criarGraficos(dividendosScore, qualidadeScore);\n'
-    html += '  criarTabela();\n'
-    html += '}\n'
-    html += 'function criarGraficos(dividendos, qualidade) {\n'
-    html += '  const ctx1 = document.getElementById("dividendosChart").getContext("2d");\n'
-    html += '  new Chart(ctx1, {\n'
-    html += '    type: "doughnut",\n'
-    html += '    data: { labels: ["Aprovado", "Reprovado"], datasets: [{ data: [dividendos, 100-dividendos], backgroundColor: ["#00c853", "#ff3d00"] }] },\n'
-    html += '    options: { responsive: true, plugins: { legend: { labels: { color: "#fff" } } } }\n'
-    html += '  });\n'
-    html += '  const ctx2 = document.getElementById("qualidadeChart").getContext("2d");\n'
-    html += '  new Chart(ctx2, {\n'
-    html += '    type: "doughnut",\n'
-    html += '    data: { labels: ["Aprovado", "Reprovado"], datasets: [{ data: [qualidade, 100-qualidade], backgroundColor: ["#00c853", "#ff3d00"] }] },\n'
-    html += '    options: { responsive: true, plugins: { legend: { labels: { color: "#fff" } } } }\n'
-    html += '  });\n'
-    html += '}\n'
-    html += 'function criarTabela() {\n'
-    html += '  const table = document.getElementById("filtersTable");\n'
-    html += '  table.innerHTML = "<tr><th>Filtro</th><th>Status</th></tr><tr><td>P/L</td><td style=\"color: #00c853;\">✅ APROVADO</td></tr><tr><td>Dividend Yield</td><td style=\"color: #00c853;\">✅ APROVADO</td></tr><tr><td>ROE</td><td style=\"color: #ff9800;\">⚠️ ATENÇÃO</td></tr>";\n'
-    html += '}\n'
-    html += 'function downloadRelatorioMD() {\n'
-    html += '  const input = document.getElementById("rel-input").value;\n'
-    html += '  const md = `# 📊 Relatório Fundamentalista B3\\n\\n## Análise de Dividendos\\n${gerarAsciiChart(70, "Dividendos")}\\n\\n## Análise de Qualidade\\n${gerarAsciiChart(75, "Qualidade")}\\n\\n## Filtros\\n- P/L: ✅ Aprovado\\n- Dividend Yield: ✅ Aprovado\\n- ROE: ⚠️ Atenção\\n\\n## Análise Original\\n${input}`;\n'
-    html += '  const blob = new Blob([md], { type: "text/markdown" });\n'
-    html += '  const url = URL.createObjectURL(blob);\n'
-    html += '  const a = document.createElement("a");\n'
-    html += '  a.href = url;\n'
-    html += '  a.download = "relatorio.md";\n'
-    html += '  a.click();\n'
-    html += '}\n'
-    html += 'function limparTudo() {\n'
-    html += '  document.getElementById("rel-input").value = "";\n'
-    html += '  document.getElementById("filtersTable").innerHTML = "";\n'
-    html += '}\n'
-    html += '</script>\n'
-    html += FOOTER
-    html += '</body>\n</html>\n'
-    return html
 
 @app.route('/contato', methods=['GET', 'POST'])
 def contato():
@@ -2136,7 +1875,7 @@ def thank_you():
                         <p>✅ <strong>Análise Completa</strong><br/>Qualidade + Dividendos + Veredito</p>
                     </div>
                     <div class="feature">
-                        <p>✅ <strong>Relatório Visual</strong><br/>Gráficos coloridos e profissionais</p>
+                        <p>✅ <strong>Análise</strong><br/>Gráficos coloridos e profissionais</p>
                     </div>
                     <div class="feature">
                         <p>✅ <strong>Atualizações</strong><br/>Novas versões do prompt</p>
@@ -2399,21 +2138,21 @@ def comprar():
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 0 auto;">
                 <!-- Plano Mensal -->
-                <div class="card card-destaque" style="text-align: center; border: 2px solid rgba(255,215,0,0.3); position: relative;">
-                    <h2 style="color: #ffd700; margin-bottom: 10px; margin-top: 10px;">Mensal</h2>
+                <div class="card card-destaque" style="text-align: center; border: 2px solid rgba(255,215,0,0.3);">
+                    <h2 style="color: #ffd700; margin-bottom: 10px;">Mensal</h2>
                     <h1 style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 25<span style="font-size: 0.6em;">/mês</span></h1>
                     <p style="color: #999; margin-bottom: 30px;">Cancele a qualquer momento</p>
                     
                     <form action="/checkout" method="POST" style="margin-bottom: 20px;">
                         <input type="hidden" name="plan" value="monthly">
                         <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
-                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em;">💳 Comprar com Cartão</button>
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em;">Comprar Agora</button>
                     </form>
                     
                     <ul style="text-align: left; color: #ccc;">
                         <li>✅ Prompt completo</li>
                         <li>✅ Chave de 1 mês</li>
-                        <li>✅ Relatório Visual</li>
+                        <li>✅ Análise</li>
                         <li>✅ Exportação MD/PDF</li>
                         <li>✅ Suporte por email</li>
                         <li>✅ Atualizações incluídas</li>
@@ -2421,7 +2160,8 @@ def comprar():
                 </div>
                 
                 <!-- Plano Anual -->
-                <div class="card card-destaque" style="text-align: center; border: 2px solid rgba(255,215,0,0.3); position: relative;">
+                <div class="card card-destaque" style="text-align: center; border: 3px solid #ffd700; position: relative;">
+                    <div style="position: absolute; top: -15px; right: 20px; background: #ffd700; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">MELHOR VALOR</div>
                     <h2 style="color: #ffd700; margin-bottom: 10px; margin-top: 10px;">Anual</h2>
                     <h1 style="font-size: 2.5em; color: #ffd700; margin: 20px 0;">R$ 180<span style="font-size: 0.6em;">/ano</span></h1>
                     <p style="color: #999; margin-bottom: 30px;"><strong style="color: #ffd700;">Economize R$ 120!</strong> (vs. mensal)</p>
@@ -2429,102 +2169,18 @@ def comprar():
                     <form action="/checkout" method="POST" style="margin-bottom: 20px;">
                         <input type="hidden" name="plan" value="annual">
                         <input type="email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 10px; margin-bottom: 10px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; color: #ffffff;">
-                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em; background: #ffd700; color: #000;">💳 Comprar com Cartão</button>
+                        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px; font-size: 1em; background: #ffd700; color: #000;">Comprar Agora</button>
                     </form>
                     
                     <ul style="text-align: left; color: #ccc;">
                         <li>✅ Prompt completo</li>
                         <li>✅ Chave de 1 ano</li>
-                        <li>✅ Relatório Visual</li>
+                        <li>✅ Análise</li>
                         <li>✅ Exportação MD/PDF</li>
                         <li>✅ Suporte por email</li>
                         <li>✅ Atualizações incluídas</li>
                     </ul>
                 </div>
-            </div>
-            
-            <!-- Seção PIX -->
-            <div style="max-width: 900px; margin: 60px auto; padding: 40px; background: rgba(255,215,0,0.08); border-radius: 10px; border: 2px solid rgba(255,215,0,0.3);">
-                <h2 style="color: #ffd700; text-align: center; margin-bottom: 30px;">📱 Ou Pague com PIX</h2>
-                <p style="color: #ccc; text-align: center; margin-bottom: 30px;">Escaneie o QR Code ou copie a chave PIX. Após pagar, envie o comprovante para ativar sua chave.</p>
-                
-                <form id="pix-form" enctype="multipart/form-data" style="background: #0f1419; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid rgba(255,215,0,0.3);">
-                    <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px;">📧 Seu Email (para receber a chave):</label>
-                    <input type="email" id="pix-email" name="email" placeholder="seu@email.com" required style="width: 100%; padding: 12px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
-                    
-                    <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px; margin-top: 15px;">📎 Anexar Comprovante de Pagamento:</label>
-                    <input type="file" id="pix-receipt" name="receipt" accept="image/*,.pdf" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 0.9em; box-sizing: border-box;">
-                    <p style="color: #999; font-size: 0.85em; margin-bottom: 15px;">📁 Aceita: JPG, PNG, PDF (máx. 10MB)</p>
-                    
-                    <label style="display: block; color: #ffd700; font-weight: bold; margin-bottom: 10px;">📅 Qual plano você escolheu?</label>
-                    <select id="pix-plan" name="plan" required style="width: 100%; padding: 10px; margin-bottom: 15px; background: #1a2332; border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; color: #fff; font-size: 1em; box-sizing: border-box;">
-                        <option value="" style="background: #1a2332; color: #999;">Selecione o plano...</option>
-                        <option value="monthly" style="background: #1a2332; color: #fff;">Mensal - R$ 25</option>
-                        <option value="annual" style="background: #1a2332; color: #fff;">Anual - R$ 180</option>
-                    </select>
-                    
-                    <button type="submit" style="width: 100%; padding: 14px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; font-size: 1em; cursor: pointer;">✉️ Enviar Comprovante</button>
-                    <p id="pix-status" style="color: #ffd700; text-align: center; margin-top: 10px; display: none;"></p>
-                </form>
-                
-                <div style="background: rgba(255,215,0,0.1); border: 1px solid #ffd700; border-radius: 8px; padding: 20px; margin-top: 20px; text-align: center;">
-                    <h3 style="color: #ffd700; margin-bottom: 15px;">🔑 Chave PIX para Cópia Manual:</h3>
-                    <div style="background: #1a2332; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 2px solid #ffd700; word-break: break-all;">
-                        <p style="color: #ffd700; font-size: 0.9em; margin: 0 0 10px 0; font-weight: bold;">c3b011ff-1c68-4312-a14e-9654ba144575</p>
-                    </div>
-                    <button onclick="copyToClipboard('c3b011ff-1c68-4312-a14e-9654ba144575')" style="width: 100%; padding: 12px; background: #ffd700; color: #000; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px;">📋 Copiar Chave PIX</button>
-                    <p style="color: #ccc; font-size: 0.95em; line-height: 1.6;">
-                        <strong style="color: #ffd700;">Como funciona:</strong><br>
-                        1. Copie a chave PIX acima<br>
-                        2. Abra seu app bancário e escolha PIX<br>
-                        3. Cole a chave e confirme o valor<br>
-                        4. Após pagar, envie o comprovante no formulário acima<br>
-                        5. Sua chave será ativada em até 2 horas
-                    </p>
-                </div>
-                
-                <script>
-                document.getElementById('pix-form').addEventListener('submit', async (e) => {{
-                    e.preventDefault();
-                    
-                    const email = document.getElementById('pix-email').value;
-                    const plan = document.getElementById('pix-plan').value;
-                    const receipt = document.getElementById('pix-receipt').files[0];
-                    const statusEl = document.getElementById('pix-status');
-                    
-                    if (!email || !plan || !receipt) {{
-                        alert('Por favor, preencha todos os campos!');
-                        return;
-                    }}
-                    
-                    const formData = new FormData();
-                    formData.append('email', email);
-                    formData.append('plan', plan);
-                    formData.append('receipt', receipt);
-                    
-                    try {{
-                        statusEl.textContent = '⏳ Enviando...';
-                        statusEl.style.display = 'block';
-                        
-                        const response = await fetch('/submit-pix-receipt', {{
-                            method: 'POST',
-                            body: formData
-                        }});
-                        
-                        if (response.ok) {{
-                            statusEl.textContent = '✅ Comprovante enviado com sucesso! Você receberá sua chave em até 2 horas.';
-                            statusEl.style.color = '#00ff00';
-                            document.getElementById('pix-form').reset();
-                        }} else {{
-                            statusEl.textContent = '❌ Erro ao enviar. Tente novamente.';
-                            statusEl.style.color = '#ff6b6b';
-                        }}
-                    }} catch (error) {{
-                        statusEl.textContent = '❌ Erro de conexão. Tente novamente.';
-                        statusEl.style.color = '#ff6b6b';
-                    }}
-                }});
-                </script>
             </div>
             
             <div style="max-width: 800px; margin: 60px auto; padding: 30px; background: rgba(255,215,0,0.05); border-radius: 10px; border-left: 4px solid #ffd700;">
@@ -2756,7 +2412,6 @@ def checkout():
             success_url=request.host_url.rstrip('/') + '/success?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=request.host_url.rstrip('/') + '/cancel',
             customer_email=email,
-            locale='pt-BR',
         )
         return redirect(session.url, code=303)
     except ValueError as e:
@@ -3079,93 +2734,3 @@ Para renovar, acesse: https://prompt-b3-ndes.onrender.com/minha-conta
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-
-@app.route('/submit-pix-receipt', methods=['POST'])
-def submit_pix_receipt():
-    """Receber comprovante de PIX e enviar email"""
-    try:
-        email = request.form.get('email')
-        plan = request.form.get('plan')
-        receipt = request.files.get('receipt')
-        
-        if not email or not plan or not receipt:
-            return "Campos obrigatórios faltando", 400
-        
-        # Validar email
-        if '@' not in email:
-            return "Email inválido", 400
-        
-        # Salvar arquivo temporariamente
-        import tempfile
-        import os
-        
-        temp_dir = tempfile.gettempdir()
-        filename = f"pix_receipt_{email.split('@')[0]}_{int(time.time())}.{receipt.filename.split('.')[-1]}"
-        filepath = os.path.join(temp_dir, filename)
-        receipt.save(filepath)
-        
-        # Enviar email com comprovante
-        plan_name = "Mensal (R$ 25/mês)" if plan == "monthly" else "Anual (R$ 180/ano)"
-        
-        msg = MIMEMultipart()
-        msg['From'] = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@promptb3.com')
-        msg['To'] = 'promptpegardini@gmail.com'
-        msg['Subject'] = f'🎯 Novo Comprovante PIX - {plan_name}'
-        
-        body = f"""
-Novo pagamento PIX recebido!
-
-📧 Email do Cliente: {email}
-📅 Plano: {plan_name}
-⏰ Data: {time.strftime('%d/%m/%Y %H:%M:%S')}
-
-Por favor, verifique o comprovante em anexo e ative a chave para o cliente.
-
----
-Sistema Automático - Prompt B3
-        """
-        
-        msg.attach(MIMEText(body, 'plain'))
-        
-        # Anexar arquivo
-        with open(filepath, 'rb') as attachment:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(attachment.read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', f'attachment; filename= {filename}')
-            msg.attach(part)
-        
-        # Enviar via SendGrid
-        sg = sendgrid.SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-        mail = Mail(
-            from_email='noreply@promptb3.com',
-            to_emails='promptpegardini@gmail.com',
-            subject=f'🎯 Novo Comprovante PIX - {plan_name}',
-            html_content=f"""
-            <h2>Novo pagamento PIX recebido!</h2>
-            <p><strong>Email do Cliente:</strong> {email}</p>
-            <p><strong>Plano:</strong> {plan_name}</p>
-            <p><strong>Data:</strong> {time.strftime('%d/%m/%Y %H:%M:%S')}</p>
-            <p>Por favor, verifique o comprovante em anexo e ative a chave para o cliente.</p>
-            """
-        )
-        
-        # Adicionar anexo
-        with open(filepath, 'rb') as f:
-            data = f.read()
-            mail.attachment = Attachment(
-                FileContent(base64.b64encode(data).decode()),
-                FileName(filename),
-                FileType('application/octet-stream')
-            )
-        
-        response = sg.send(mail)
-        
-        # Limpar arquivo temporário
-        os.remove(filepath)
-        
-        return "Comprovante enviado com sucesso!", 200
-        
-    except Exception as e:
-        print(f"Erro ao enviar comprovante: {e}")
-        return f"Erro: {str(e)}", 500
