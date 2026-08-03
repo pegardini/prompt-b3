@@ -2675,7 +2675,7 @@ def minha_conta():
 
 @app.route('/download-prompt')
 def download_prompt():
-    """Download prompt .txt with license key already embedded"""
+    """Download prompt .txt with license key already embedded — validates expiry first"""
     email = request.args.get('email', '').strip()
     if not email:
         return redirect('/minha-conta')
@@ -2687,12 +2687,31 @@ def download_prompt():
     expiry_str = customer.get('trial_expiry') or customer.get('subscription_expiry', '')
     plan = customer.get('plan', 'Trial 7 Dias')
     expiry_display = ''
+    is_active = False
     if expiry_str:
         try:
             expiry_dt = datetime.fromisoformat(expiry_str[:19])
             expiry_display = expiry_dt.strftime('%d/%m/%Y')
+            is_active = expiry_dt > datetime.utcnow()
         except:
             pass
+    # VALIDAÇÃO AUTOMÁTICA: bloqueia download se licença expirada
+    if not is_active:
+        return f"""
+        <!DOCTYPE html><html><head><meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Licença Expirada</title><style>{CSS}</style></head>
+        <body>{NAV}<div class="container">
+        <div class="card" style="border: 1px solid rgba(255,61,0,0.5); background: rgba(255,61,0,0.05); text-align: center; padding: 40px;">
+            <p style="font-size: 3em; margin-bottom: 20px;">🔒</p>
+            <h2 style="color: #ff3d00;">Licença Expirada</h2>
+            <p style="color: #aaa; margin: 20px 0;">Sua licença expirou em <strong style="color: #ffd700;">{expiry_display}</strong>.<br>Para continuar usando o Prompt Fundamentalista de Ações, renove sua assinatura.</p>
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 25px;">
+                <a href="/comprar" class="btn btn-gold" style="text-decoration: none;">🔄 Renovar Assinatura</a>
+                <a href="/minha-conta?email={email}" class="btn" style="text-decoration: none; background: rgba(255,255,255,0.1);">← Voltar</a>
+            </div>
+        </div></div>{FOOTER}</body></html>
+        """
     # Load prompt master file
     try:
         with open('PROMPT_MESTRE_HIBRIDO_BR_v8.md', 'r', encoding='utf-8') as f:
@@ -2703,17 +2722,21 @@ def download_prompt():
     prompt_text = prompt_text.replace('[CHAVE_DE_LICENCA]', license_key)
     # Replace the header block with personalized header
     new_header = f"""================================================================
-SISTEMA DE ANALISE FUNDAMENTALISTA B3 v7.3 - ATIVACAO
+PROMPT FUNDAMENTALISTA DE ACOES v8 - ATIVACAO
 ================================================================
-SUA CHAVE DE LICENCA (JA EMBUTIDA - VALIDACAO AUTOMATICA):
+SUA CHAVE DE LICENCA (JA EMBUTIDA):
 CHAVE: {license_key}
 PLANO: {plan}
 VALIDADE: {expiry_display}
 EMAIL: {email}
 
 INSTRUCAO: Cole este prompt completo no ChatGPT, Claude ou Gemini.
-A chave ja esta embutida - a IA ira validar automaticamente.
+Forneca os dados financeiros da empresa quando solicitado.
 Para renovar, acesse: https://prompt-b3-ndes.onrender.com/minha-conta
+
+AVISO LEGAL: Este prompt e uma ferramenta educacional. Nao constitui
+recomendacao de investimento (Resolucao CVM 20/2021). A IA pode
+cometer erros. Verifique os dados em fontes oficiais.
 ================================================================
 
 """
@@ -2724,7 +2747,7 @@ Para renovar, acesse: https://prompt-b3-ndes.onrender.com/minha-conta
         count=1,
         flags=re.DOTALL
     )
-    filename = f'Prompt_B3_{plan.replace(" ", "_")}_{email.split("@")[0]}.txt'
+    filename = f'Prompt_Fundamentalista_Acoes_{plan.replace(" ", "_")}_{email.split("@")[0]}.txt'
     return Response(
         prompt_text,
         mimetype='text/plain; charset=utf-8',
