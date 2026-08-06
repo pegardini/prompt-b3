@@ -436,11 +436,13 @@ NAV = """
 FOOTER = """
 <footer style="background: #1a2332; border-top: 1px solid rgba(255,215,0,0.2); padding: 30px 20px; margin-top: 60px;">
     <div style="max-width: 1200px; margin: 0 auto;">
-        <p>&copy; 2026 Prompt Fundamentalista de Ações | promptpegardini@gmail.com</p>
-        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚠️ Aviso de Independência:</strong> Este produto é uma obra educacional independente. Não é oficial, afiliado, autorizado ou endossado por terceiros. Os critérios, filtros, pontuações e relatórios foram desenvolvidos de forma independente.</p>
-        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚖️ Aviso Legal:</strong> Este produto é um prompt de IA para fins educacionais exclusivamente. Não constitui recomendação, aconselhamento ou sugestão de investimento. A IA pode cometer erros. Sempre verifique informações em fontes oficiais e consulte especialistas antes de tomar decisões financeiras.</p>
-        <p style="font-size: 0.85em; margin-top: 10px;"><strong>🤖 Sobre IA:</strong> ChatGPT, Claude e Gemini são marcas de seus respectivos titulares. Este produto não possui afiliação, patrocínio ou endosso dessas plataformas.</p>
-        <p style="font-size: 0.85em; margin-top: 10px;"><a href="/terms" style="color: #ffd700; text-decoration: none;">Termos de Uso Completos</a></p>
+        <p>&copy; 2026 Prompt Fundamentalista | promptpegardini@gmail.com</p>
+        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚠️ Aviso de Independência:</strong> Este produto é uma obra educacional independente. Não possui qualquer vínculo, parceria ou autorização de terceiros cujas metodologias públicas possam ser mencionadas (ex: Finclass, Barsi).</p>
+        <p style="font-size: 0.85em; margin-top: 10px;"><strong>⚖️ Aviso Legal e Regulatório (CVM):</strong> Ferramenta educacional e tecnológica. Não constitui recomendação de investimento ou análise de valores mobiliários (Resolução CVM nº 20/2021). A IA pode cometer erros. O usuário é o único responsável por suas decisões financeiras.</p>
+        <p style="font-size: 0.85em; margin-top: 10px;">
+            <a href="/termos" style="color: #ffd700; text-decoration: none; margin-right: 15px;">Termos de Uso</a>
+            <a href="/privacidade" style="color: #ffd700; text-decoration: none;">Política de Privacidade</a>
+        </p>
     </div>
 </footer>
 """
@@ -777,6 +779,87 @@ def subscribe():
     </html>
     """
     return html
+
+@app.route('/termos')
+def termos():
+    content = f"""
+        <div class="card" style="text-align: left; line-height: 1.6;">
+            <h2>Termos de Uso</h2>
+            <p style="color: #aaa; margin-bottom: 30px;"><strong>Última atualização:</strong> Agosto de 2026</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">1. Natureza do Serviço</h3>
+            <p>O "Prompt Fundamentalista" é uma ferramenta de software (prompt) com finalidade estritamente <strong>educacional e tecnológica</strong>. Nosso objetivo é auxiliar na organização de dados financeiros públicos por meio de Inteligência Artificial.</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">2. Ausência de Recomendação de Investimento</h3>
+            <p>Em conformidade com a Resolução CVM nº 20/2021, declaramos que <strong>não prestamos serviço de análise de valores mobiliários, consultoria ou recomendação de investimentos</strong>. As saídas geradas pela Inteligência Artificial não devem ser interpretadas como indicação de compra, venda ou manutenção de ativos financeiros.</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">3. Limitação de Responsabilidade</h3>
+            <p>A Inteligência Artificial é suscetível a erros de cálculo, interpretação ("alucinações") e desatualização. O usuário assume total e exclusiva responsabilidade pela conferência dos dados em fontes oficiais (CVM, RI das empresas) antes de tomar qualquer decisão financeira. Não nos responsabilizamos por eventuais perdas ou danos decorrentes do uso das informações organizadas pela ferramenta.</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">4. Política de Reembolso</h3>
+            <p>Conforme o Art. 49 do Código de Defesa do Consumidor, garantimos o direito de arrependimento no prazo de 7 (sete) dias corridos a partir da contratação, com devolução integral do valor pago.</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">5. Propriedade Intelectual</h3>
+            <p>Este projeto é independente. Não possuímos qualquer vínculo, parceria, patrocínio ou autorização de terceiros cujas metodologias públicas possam ser mencionadas em caráter educacional (ex: Finclass, Barsi).</p>
+        </div>
+    """
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Termos de Uso - Prompt Fundamentalista</title>
+        <style>{CSS}</style>
+    </head>
+    <body>
+        {NAV}
+        <div class="container">
+            {content}
+        </div>
+        {FOOTER}
+    </body>
+    </html>
+    """
+
+@app.route('/privacidade')
+def privacidade():
+    content = f"""
+        <div class="card" style="text-align: left; line-height: 1.6;">
+            <h2>Política de Privacidade</h2>
+            <p style="color: #aaa; margin-bottom: 30px;"><strong>Última atualização:</strong> Agosto de 2026</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">1. Coleta de Dados</h3>
+            <p>Coletamos apenas os dados estritamente necessários para a prestação do serviço e gestão de assinaturas: endereço de e-mail e dados de pagamento (processados de forma segura pela Stripe). Não armazenamos senhas, pois o acesso é feito via e-mail e chave de licença.</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">2. Uso dos Dados</h3>
+            <p>Seu e-mail é utilizado exclusivamente para: envio da chave de licença, envio de recibos de pagamento, comunicação sobre atualizações da ferramenta e avisos de renovação/expiração.</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">3. Compartilhamento</h3>
+            <p>Não vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros para fins publicitários. O compartilhamento ocorre apenas com os provedores de infraestrutura essenciais (Stripe para pagamentos e Render para hospedagem).</p>
+            
+            <h3 style="color: #ffd700; margin-top: 25px;">4. Retenção e Exclusão</h3>
+            <p>Seus dados são mantidos enquanto sua assinatura estiver ativa. Você pode solicitar a exclusão definitiva dos seus dados a qualquer momento enviando um e-mail para promptpegardini@gmail.com.</p>
+        </div>
+    """
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Política de Privacidade - Prompt Fundamentalista</title>
+        <style>{CSS}</style>
+    </head>
+    <body>
+        {NAV}
+        <div class="container">
+            {content}
+        </div>
+        {FOOTER}
+    </body>
+    </html>
+    """
 
 @app.route('/success')
 def success():
