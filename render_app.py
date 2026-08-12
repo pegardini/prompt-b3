@@ -27,13 +27,13 @@ def configure_stripe():
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROMPT_FILE = os.path.join(BASE_DIR, 'PROMPT_MESTRE_HIBRIDO_BR_v8.md')
-EBOOK_FILE = os.path.join(BASE_DIR, 'static', 'ebook_prompt_b3.pdf')
+EBOOK_FILE = os.path.join(BASE_DIR, 'static', 'ebook_prompt_fundamentalista.pdf')
 DB_FILE = '/tmp/customers.json'  # fallback only
 LOG_FILE = '/tmp/app_debug.log'
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'promptpegardini@gmail.com')
-APP_URL = os.environ.get('APP_URL', 'https://prompt-b3-ndes.onrender.com')
+APP_URL = os.environ.get('APP_URL', 'https://prompt.pcgdigital.com.br')
 
 def log_debug(message):
     """Write debug message to log file"""
