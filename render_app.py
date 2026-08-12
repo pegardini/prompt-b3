@@ -2013,7 +2013,7 @@ def send_email_sequence_day1(email):
             <div style="background-color: rgba(255,215,0,0.1); padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ffd700; text-align: center;">
                 <p style="color: #333; font-size: 16px; margin: 0;"><strong>📥 Teste 7 Dias Grátis</strong></p>
                 <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">Sem cartão de crédito. Sem compromisso.</p>
-                <a href="https://prompt-b3-ndes.onrender.com/trial" style="display: inline-block; background-color: #ffd700; color: #0a0f1e; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Começar Teste Grátis</a>
+                <a href="https://prompt.pcgdigital.com.br/trial" style="display: inline-block; background-color: #ffd700; color: #0a0f1e; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Começar Teste Grátis</a>
             </div>
             
             <h3 style="color: #333; margin-top: 30px;">✅ O que você terá acesso:</h3>
@@ -2073,7 +2073,7 @@ def send_email_sequence_day3(email):
             </table>
             
             <div style="text-align: center; margin: 20px 0;">
-                <a href="https://prompt-b3-ndes.onrender.com/comprar" style="display: inline-block; background-color: #ffd700; color: #0a0f1e; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">Ver Todos os Planos</a>
+                <a href="https://prompt.pcgdigital.com.br/comprar" style="display: inline-block; background-color: #ffd700; color: #0a0f1e; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">Ver Todos os Planos</a>
             </div>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -2101,7 +2101,7 @@ def send_email_sequence_day7(email):
             <div style="background-color: rgba(255,107,107,0.1); padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #ff6b6b; text-align: center;">
                 <p style="color: #333; font-size: 18px; margin: 0;"><strong>🎁 Primeiro Mês com 50% OFF</strong></p>
                 <p style="color: #666; font-size: 14px; margin: 10px 0 0 0;">Use o código: <strong>EBOOK50</strong></p>
-                <a href="https://prompt-b3-ndes.onrender.com/comprar" style="display: inline-block; background-color: #ff6b6b; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Aproveitar Oferta</a>
+                <a href="https://prompt.pcgdigital.com.br/comprar" style="display: inline-block; background-color: #ff6b6b; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 15px;">Aproveitar Oferta</a>
             </div>
             
             <p style="color: #333; font-size: 15px; margin-top: 20px;">Não deixe passar essa oportunidade!</p>
@@ -2815,7 +2815,7 @@ EMAIL: {email}
 
 INSTRUCAO: Cole este prompt completo no ChatGPT, Claude ou Gemini.
 Forneca os dados financeiros da empresa quando solicitado.
-Para renovar, acesse: https://prompt-b3-ndes.onrender.com/minha-conta
+Para renovar, acesse: https://prompt.pcgdigital.com.br/minha-conta
 
 AVISO LEGAL: Este prompt e uma ferramenta educacional. Nao constitui
 recomendacao de investimento (Resolucao CVM 20/2021). A IA pode
